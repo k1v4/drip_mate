@@ -1,0 +1,33 @@
+# .golangci.yml
+version: "2"
+setup:
+  timeout: 5m
+
+run:
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    - goconst
+    - gocritic
+    - gocyclo
+    - govet
+    - nakedret
+    - prealloc
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/k1v4/drip_mate
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
