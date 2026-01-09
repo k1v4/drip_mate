@@ -6,8 +6,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type loggerKey string
+
 const (
-	LoggerKey   = "logger"
+	LoggerKey   = loggerKey("logger")
 	RequestID   = "requestID"
 	ServiceName = "users"
 )

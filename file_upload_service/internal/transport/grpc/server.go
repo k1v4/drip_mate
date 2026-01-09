@@ -39,6 +39,7 @@ func NewServer(ctx context.Context, grpcPort int, uploadService IUploadService) 
 func (s *Server) Start(ctx context.Context) error {
 	eg := errgroup.Group{}
 
+	//nolint:staticcheck
 	eg.Go(func() error {
 		lg := logger.GetLoggerFromContext(ctx)
 		if lg != nil {
@@ -54,8 +55,8 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) Stop(ctx context.Context) error {
 	s.grpcServer.GracefulStop()
 
-	l := logger.GetLoggerFromContext(ctx)
-	if l != nil {
+	l := logger.GetLoggerFromContext(ctx) //nolint:staticcheck
+	if l != nil {                         //nolint:staticcheck
 		l.Info(ctx, "grpc server stopped")
 	}
 

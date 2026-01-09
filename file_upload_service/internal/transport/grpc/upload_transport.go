@@ -24,8 +24,6 @@ func NewUploadTransport(service IUploadService) *UploadTransport {
 }
 
 func (u *UploadTransport) UploadFile(ctx context.Context, req *uploaderv1.ImageUploadRequest) (*uploaderv1.ImageUploadResponse, error) {
-	const op = "transport.UploadImage"
-
 	imageData := req.GetImageData()
 	if len(imageData) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "image data is empty")
@@ -47,8 +45,6 @@ func (u *UploadTransport) UploadFile(ctx context.Context, req *uploaderv1.ImageU
 }
 
 func (u *UploadTransport) DeleteFile(ctx context.Context, req *uploaderv1.ImageDeleteRequest) (*uploaderv1.ImageDeleteResponse, error) {
-	const op = "uploader.DeleteImage"
-
 	url := req.GetUrl()
 	if len(strings.TrimSpace(url)) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "url is empty")
