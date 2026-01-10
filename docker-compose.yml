@@ -1,12 +1,26 @@
 version: '3.8'
 
 services:
+  auth:
+    build: ./auth_service
+    container_name: auth
+    env_file:
+      - auth_service/.env
+    ports:
+      - "${REST_AUTH_PORT}:${REST_AUTH_PORT}"  # 8080:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
   postgres:
-    image: postgis/postgis:17-3.4-alpine
+    image: postgres:17-alpine
     container_name: postgres_container
     env_file:
       - .env
     volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"  # 5432:5432
