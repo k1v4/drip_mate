@@ -16,3 +16,13 @@ packages:
       dir: file_upload_service/internal/mocks/{{replaceAll (replaceAll (replace .InterfaceDirRelative "file_upload_service/internal/" "" -1) "internal" "internal_") "vendor/" ""}}
       outpkg: mocks
       mockname: "{{ .InterfaceName | camelcase }}"
+  github.com/k1v4/drip_mate/user_service/internal:
+    config:
+      all: true
+      recursive: true
+      exclude:
+        - "mocks"
+        - "pkg/tests"
+      dir: user_service/internal/mocks/{{replaceAll (replaceAll (replace .InterfaceDirRelative "user_service/internal/" "" -1) "internal" "internal_") "vendor/" ""}}
+      outpkg: mocks
+      mockname: "{{ .InterfaceName | camelcase }}"
