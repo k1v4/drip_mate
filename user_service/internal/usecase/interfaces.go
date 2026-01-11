@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"github.com/k1v4/drip_mate/user_service/internal/entity"
+	"user_service/internal/entity"
 )
 
 type ISsoRepository interface {

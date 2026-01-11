@@ -4,7 +4,7 @@ CREATE TYPE season AS ENUM ('summer', 'winter', 'autumn', 'spring');
 -- Таблицы
 CREATE TABLE access_level (
                               id SERIAL PRIMARY KEY,
-                              name TEXT NOT NULL
+                              name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE users (
@@ -34,7 +34,7 @@ CREATE TABLE catalog (
 
 CREATE TABLE music (
                        id SERIAL PRIMARY KEY,
-                       name TEXT NOT NULL
+                       name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE music_user (
@@ -45,7 +45,7 @@ CREATE TABLE music_user (
 
 CREATE TABLE style_types (
                              id SERIAL PRIMARY KEY,
-                             name TEXT NOT NULL
+                             name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE style_user (
@@ -56,7 +56,7 @@ CREATE TABLE style_user (
 
 CREATE TABLE color_types (
                              id SERIAL PRIMARY KEY,
-                             name TEXT NOT NULL
+                             name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE color_user (
@@ -136,3 +136,43 @@ ALTER TABLE saved_outfits
 ALTER TABLE saved_outfits
     ADD CONSTRAINT fk_saved_outfits_catalog
         FOREIGN KEY (catalog_item_id) REFERENCES catalog(id) ON DELETE CASCADE;
+
+
+-- Справочные данные
+INSERT INTO access_level(name) VALUES ('user'), ('admin');
+
+INSERT INTO color_types (name) VALUES
+                                       ('black'),
+                                       ('white'),
+                                       ('red'),
+                                       ('blue'),
+                                       ('green'),
+                                       ('grey'),
+                                       ('brown'),
+                                       ('beige'),
+                                       ('yellow');
+
+INSERT INTO style_types (name) VALUES
+                                       ('casual'),
+                                       ('sport'),
+                                       ('streetwear'),
+                                       ('classic'),
+                                       ('running'),
+                                       ('basketball'),
+                                       ('training'),
+                                       ('lifestyle'),
+                                       ('outdoor'),
+                                       ('formal');
+
+INSERT INTO music (name) VALUES
+                                 ('hip-hop'),
+                                 ('rap'),
+                                 ('rock'),
+                                 ('pop'),
+                                 ('electronic'),
+                                 ('house'),
+                                 ('techno'),
+                                 ('jazz'),
+                                 ('rnb'),
+                                 ('indie');
+

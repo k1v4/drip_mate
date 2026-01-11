@@ -2,14 +2,15 @@ package tests
 
 import (
 	"fmt"
+	"testing"
+	"time"
+	"user_service/tests/suite"
+
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/k1v4/drip_mate/user_service/tests/suite"
 	ssov1 "github.com/k1v4/protos/gen/sso"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 const (

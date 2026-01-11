@@ -3,9 +3,10 @@ package config
 import (
 	"time"
 
+	"user_service/pkg/DataBase/postgres"
+
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
-	"github.com/k1v4/drip_mate/user_service/pkg/DataBase/postgres"
 )
 
 type Config struct {

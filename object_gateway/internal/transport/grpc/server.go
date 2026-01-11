@@ -6,7 +6,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/k1v4/drip_mate/file_upload_service/pkg/logger"
+	"object_gateway/pkg/logger"
+
 	uploaderv1 "github.com/k1v4/protos/gen/file_uploader"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"

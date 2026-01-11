@@ -1,8 +1,9 @@
 package CORS
 
 import (
-	"github.com/rs/cors"
 	"net/http"
+
+	"github.com/rs/cors"
 )
 
 // Settings add cors settings

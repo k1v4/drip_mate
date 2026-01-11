@@ -4,8 +4,8 @@ package mocks
 
 import (
 	context "context"
+	entity "user_service/internal/entity"
 
-	entity "github.com/k1v4/drip_mate/user_service/internal/entity"
 	mock "github.com/stretchr/testify/mock"
 )
 

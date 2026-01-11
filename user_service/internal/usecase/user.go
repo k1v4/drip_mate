@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/k1v4/drip_mate/user_service/internal/entity"
-	"github.com/k1v4/drip_mate/user_service/pkg/DataBase"
-	"github.com/k1v4/drip_mate/user_service/pkg/jwtpkg"
-	"golang.org/x/crypto/bcrypt"
 	"time"
+	"user_service/internal/entity"
+	"user_service/pkg/DataBase"
+	"user_service/pkg/jwtpkg"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (

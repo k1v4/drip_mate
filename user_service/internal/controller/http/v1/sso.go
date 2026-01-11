@@ -3,12 +3,13 @@ package v1
 import (
 	"errors"
 	"fmt"
-	"github.com/k1v4/drip_mate/user_service/internal/entity"
-	"github.com/k1v4/drip_mate/user_service/internal/usecase"
-	jwtPkg "github.com/k1v4/drip_mate/user_service/pkg/jwtpkg"
-	"github.com/k1v4/drip_mate/user_service/pkg/logger"
-	"github.com/labstack/echo/v4"
 	"net/http"
+	"user_service/internal/entity"
+	"user_service/internal/usecase"
+	jwtPkg "user_service/pkg/jwtpkg"
+	"user_service/pkg/logger"
+
+	"github.com/labstack/echo/v4"
 )
 
 type containerRoutes struct {

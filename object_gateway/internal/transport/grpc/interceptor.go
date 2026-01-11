@@ -3,7 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/k1v4/drip_mate/file_upload_service/pkg/logger"
+	"object_gateway/pkg/logger"
+
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )

@@ -3,8 +3,9 @@ package v1
 import (
 	"net/http"
 
-	"github.com/k1v4/drip_mate/user_service/internal/usecase"
-	"github.com/k1v4/drip_mate/user_service/pkg/logger"
+	"user_service/internal/usecase"
+	"user_service/pkg/logger"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )

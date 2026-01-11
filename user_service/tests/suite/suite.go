@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/k1v4/drip_mate/user_service/internal/config"
+	"user_service/internal/config"
+
 	ssov1 "github.com/k1v4/protos/gen/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

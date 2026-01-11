@@ -7,11 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/k1v4/drip_mate/file_upload_service/internal/config"
-	"github.com/k1v4/drip_mate/file_upload_service/internal/repository"
-	"github.com/k1v4/drip_mate/file_upload_service/internal/service"
-	"github.com/k1v4/drip_mate/file_upload_service/internal/transport/grpc"
-	"github.com/k1v4/drip_mate/file_upload_service/pkg/logger"
+	"object_gateway/internal/config"
+	"object_gateway/internal/repository"
+	"object_gateway/internal/service"
+	"object_gateway/internal/transport/grpc"
+	"object_gateway/pkg/logger"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )

@@ -8,28 +8,29 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/k1v4/drip_mate/user_service/internal/config"
-	v1 "github.com/k1v4/drip_mate/user_service/internal/controller/http/v1"
-	"github.com/k1v4/drip_mate/user_service/internal/usecase"
-	"github.com/k1v4/drip_mate/user_service/internal/usecase/repository"
-	"github.com/k1v4/drip_mate/user_service/pkg/DataBase/postgres"
-	"github.com/k1v4/drip_mate/user_service/pkg/httpserver"
-	"github.com/k1v4/drip_mate/user_service/pkg/logger"
+	"user_service/internal/config"
+	v1 "user_service/internal/controller/http/v1"
+	"user_service/internal/usecase"
+	"user_service/internal/usecase/repository"
+	"user_service/pkg/DataBase/postgres"
+	"user_service/pkg/httpserver"
+	"user_service/pkg/logger"
+
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
 	ctx := context.Background()
 
-	authLogger := logger.NewLogger()
-	ctx = context.WithValue(ctx, logger.LoggerKey, authLogger)
+	userLogger := logger.NewLogger()
+	ctx = context.WithValue(ctx, logger.LoggerKey, userLogger)
 
 	cfg := config.MustLoadConfig()
 	if cfg == nil {
 		panic("load config fail")
 	}
 
-	authLogger.Info(ctx, "read config successfully")
+	userLogger.Info(ctx, "read config successfully")
 
 	url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.UserName,
@@ -41,11 +42,11 @@ func main() {
 
 	pg, err := postgres.New(url, postgres.MaxPoolSize(cfg.PoolMax))
 	if err != nil {
-		authLogger.Error(ctx, fmt.Sprintf("app - Run - postgres.New: %s", err))
+		userLogger.Error(ctx, fmt.Sprintf("app - Run - postgres.New: %s", err))
 	}
 	defer pg.Close()
 
-	authLogger.Info(ctx, "connected to database successfully")
+	userLogger.Info(ctx, "connected to database successfully")
 
 	authRepo := repository.NewAuthRepository(pg)
 
@@ -53,7 +54,7 @@ func main() {
 
 	handler := echo.New()
 
-	v1.NewRouter(handler, authLogger, authUseCase)
+	v1.NewRouter(handler, userLogger, authUseCase)
 
 	httpServer := httpserver.New(handler, httpserver.Port(strconv.Itoa(cfg.RestServerPort)))
 
@@ -63,15 +64,15 @@ func main() {
 
 	select {
 	case s := <-interrupt:
-		authLogger.Info(ctx, "app-Run-signal: "+s.String())
+		userLogger.Info(ctx, "app-Run-signal: "+s.String())
 	case err = <-httpServer.Notify():
-		authLogger.Error(ctx, fmt.Sprintf("app-Run-httpServer.Notify: %s", err))
+		userLogger.Error(ctx, fmt.Sprintf("app-Run-httpServer.Notify: %s", err))
 	}
 
 	// shutdown
 	err = httpServer.Shutdown()
 	if err != nil {
-		authLogger.Error(ctx, fmt.Sprintf("app-Run-httpServer.Shutdown: %s", err))
+		userLogger.Error(ctx, fmt.Sprintf("app-Run-httpServer.Shutdown: %s", err))
 	}
 
 }

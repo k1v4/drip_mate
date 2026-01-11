@@ -3,11 +3,12 @@ package jwtpkg
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/k1v4/drip_mate/user_service/internal/entity"
-	"github.com/labstack/echo/v4"
 	"strings"
 	"time"
+	"user_service/internal/entity"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/labstack/echo/v4"
 )
 
 const secret = "secret"

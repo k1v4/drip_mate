@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"user_service/internal/entity"
+	"user_service/pkg/DataBase"
+	"user_service/pkg/DataBase/postgres"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"github.com/k1v4/drip_mate/user_service/internal/entity"
-	"github.com/k1v4/drip_mate/user_service/pkg/DataBase"
-	"github.com/k1v4/drip_mate/user_service/pkg/DataBase/postgres"
 )
 
 type AuthRepository struct {
