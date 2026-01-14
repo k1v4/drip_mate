@@ -15,7 +15,7 @@ CREATE TABLE users (
                        name TEXT,
                        surname TEXT,
                        city TEXT,
-                       access_id INT
+                       access_id INT NOT NULL default 1
 );
 
 CREATE TABLE catalog (

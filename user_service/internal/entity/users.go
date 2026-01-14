@@ -3,13 +3,15 @@ package entity
 import "encoding/json"
 
 type User struct {
-	ID            int    `json:"id"`
-	Email         string `json:"email"`
-	Password      []byte `json:"-"`
-	Name          string `json:"name"`
-	Surname       string `json:"surname"`
-	Username      string `json:"username"`
-	AccessLevelId int    `json:"-"`
+	ID              int    `json:"id"`
+	Email           string `json:"email"`
+	Password        []byte `json:"-"`
+	Name            string `json:"name"`
+	Surname         string `json:"surname"`
+	Username        string `json:"username"`
+	City            string `json:"city"`
+	AccessLevelName string `json:"access_level"`
+	AccessLevelId   int    `json:"-"`
 }
 
 func (o *User) MarshalBinary() ([]byte, error) {

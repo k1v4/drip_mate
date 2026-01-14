@@ -104,13 +104,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 		return fmt.Errorf("%s: %w", op, errors.New("email is required"))
 	}
 
-	if len([]rune(u.Username)) == 0 {
-		errorResponse(c, http.StatusBadRequest, "username is required")
-
-		return fmt.Errorf("%s: %w", op, errors.New("username is required"))
-	}
-
-	register, err := r.t.Register(ctx, u.Email, u.Password, u.Username)
+	register, err := r.t.Register(ctx, u.Email, u.Password)
 	if err != nil {
 		if errors.Is(err, usecase.ErrUserExist) {
 			errorResponse(c, http.StatusUnauthorized, "email or username is exist")
@@ -163,7 +157,7 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 		return fmt.Errorf("%s: %w", op, errors.New("bad request"))
 	}
 
-	_, err = r.t.UpdateUserInfo(ctx, userId, u.Email, u.Password, u.Name, u.Surname, u.Username)
+	_, err = r.t.UpdateUserInfo(ctx, userId, u.Email, u.Password, u.Name, u.Surname, u.Username, u.City)
 	if err != nil {
 		errorResponse(c, http.StatusInternalServerError, "internal_old error")
 

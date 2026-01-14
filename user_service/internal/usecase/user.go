@@ -70,7 +70,7 @@ func (s *AuthUseCase) Login(ctx context.Context, email string, password string) 
 
 // Register adds new user to app
 // If user with given email already exists, returns error.
-func (s *AuthUseCase) Register(ctx context.Context, email, password, username string) (int, error) {
+func (s *AuthUseCase) Register(ctx context.Context, email, password string) (int, error) {
 	const op = "service.Register"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -78,7 +78,7 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password, username st
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	id, err := s.repo.SaveUser(ctx, email, passHash, username)
+	id, err := s.repo.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, DataBase.ErrUserExists) {
 			return 0, ErrUserExist
@@ -105,7 +105,11 @@ func (s *AuthUseCase) DeleteAccount(ctx context.Context, id int) (bool, error) {
 	return true, nil
 }
 
-func (s *AuthUseCase) UpdateUserInfo(ctx context.Context, id int, email, password, name, surname, username string) (entity.User, error) {
+func (s *AuthUseCase) UpdateUserInfo(
+	ctx context.Context,
+	id int,
+	email, password, name, surname, username, city string,
+) (entity.User, error) {
 	const op = "service.UpdateUserInfo"
 
 	passhash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -120,6 +124,7 @@ func (s *AuthUseCase) UpdateUserInfo(ctx context.Context, id int, email, passwor
 		Name:     name,
 		Surname:  surname,
 		Username: username,
+		City:     city,
 	})
 	if err != nil {
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)

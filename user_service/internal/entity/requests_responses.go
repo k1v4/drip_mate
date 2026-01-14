@@ -2,7 +2,6 @@ package entity
 
 type RegisterRequest struct {
 	Email    string `json:"email"`
-	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -53,6 +52,7 @@ type UpdateUserRequest struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
 	Surname  string `json:"surname"`
+	City     string `json:"city"`
 }
 
 type UpdateUserResponse struct {

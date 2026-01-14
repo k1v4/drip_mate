@@ -183,9 +183,9 @@ func (_c *ISsoRepository_GetUserById_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
-// SaveUser provides a mock function with given fields: ctx, email, password, username
-func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password []byte, username string) (int, error) {
-	ret := _m.Called(ctx, email, password, username)
+// SaveUser provides a mock function with given fields: ctx, email, password
+func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password []byte) (int, error) {
+	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SaveUser")
@@ -193,17 +193,17 @@ func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password [
 
 	var r0 int
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []byte, string) (int, error)); ok {
-		return rf(ctx, email, password, username)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) (int, error)); ok {
+		return rf(ctx, email, password)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []byte, string) int); ok {
-		r0 = rf(ctx, email, password, username)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) int); ok {
+		r0 = rf(ctx, email, password)
 	} else {
 		r0 = ret.Get(0).(int)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, []byte, string) error); ok {
-		r1 = rf(ctx, email, password, username)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) error); ok {
+		r1 = rf(ctx, email, password)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -220,14 +220,13 @@ type ISsoRepository_SaveUser_Call struct {
 //   - ctx context.Context
 //   - email string
 //   - password []byte
-//   - username string
-func (_e *ISsoRepository_Expecter) SaveUser(ctx interface{}, email interface{}, password interface{}, username interface{}) *ISsoRepository_SaveUser_Call {
-	return &ISsoRepository_SaveUser_Call{Call: _e.mock.On("SaveUser", ctx, email, password, username)}
+func (_e *ISsoRepository_Expecter) SaveUser(ctx interface{}, email interface{}, password interface{}) *ISsoRepository_SaveUser_Call {
+	return &ISsoRepository_SaveUser_Call{Call: _e.mock.On("SaveUser", ctx, email, password)}
 }
 
-func (_c *ISsoRepository_SaveUser_Call) Run(run func(ctx context.Context, email string, password []byte, username string)) *ISsoRepository_SaveUser_Call {
+func (_c *ISsoRepository_SaveUser_Call) Run(run func(ctx context.Context, email string, password []byte)) *ISsoRepository_SaveUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].([]byte), args[3].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].([]byte))
 	})
 	return _c
 }
@@ -237,7 +236,7 @@ func (_c *ISsoRepository_SaveUser_Call) Return(_a0 int, _a1 error) *ISsoReposito
 	return _c
 }
 
-func (_c *ISsoRepository_SaveUser_Call) RunAndReturn(run func(context.Context, string, []byte, string) (int, error)) *ISsoRepository_SaveUser_Call {
+func (_c *ISsoRepository_SaveUser_Call) RunAndReturn(run func(context.Context, string, []byte) (int, error)) *ISsoRepository_SaveUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

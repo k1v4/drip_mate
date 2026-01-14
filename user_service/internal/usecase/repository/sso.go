@@ -12,6 +12,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type AuthRepository struct {
@@ -25,26 +26,38 @@ func NewAuthRepository(pg *postgres.Postgres) *AuthRepository {
 }
 
 // SaveUser adds new user to Database
-func (a *AuthRepository) SaveUser(ctx context.Context, email string, password []byte, username string) (int, error) {
+func (a *AuthRepository) SaveUser(
+	ctx context.Context,
+	email string,
+	password []byte,
+) (int, error) {
 	const op = "repository.SaveUser"
 
-	s, args, err := a.Builder.Insert("users").
-		Columns("email", "password", "username").
-		Values(email, password, username).
-		Suffix("RETURNING id").
-		ToSql()
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
 	var id int
-	err = a.Pool.QueryRow(ctx, s, args...).Scan(&id)
-	if err != nil {
-		var pqErr *pgconn.PgError
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			return 0, DataBase.ErrUserExists
+	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
+		sqlReq, args, err := a.Builder.
+			Insert("users").
+			Columns("email", "password").
+			Values(email, password).
+			Suffix("RETURNING id").
+			ToSql()
+		if err != nil {
+			return fmt.Errorf("%s: build sql: %w", op, err)
 		}
 
+		if err = tx.QueryRow(ctx, sqlReq, args...).Scan(&id); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				return DataBase.ErrUserExists
+			}
+
+			return fmt.Errorf("%s: exec: %w", op, err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -56,12 +69,25 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (entity.User
 	const op = "repository.GetUser"
 
 	var (
-		tmpName    sql.NullString
-		tmpSurname sql.NullString
+		tmpName     sql.NullString
+		tmpSurname  sql.NullString
+		tmpUsername sql.NullString
+		tmpCity     sql.NullString
 	)
 
-	s, args, err := a.Builder.Select("*").
-		From("users").
+	s, args, err := a.Builder.Select(
+		"u.id",
+		"u.email",
+		"u.password",
+		"u.username",
+		"u.name",
+		"u.surname",
+		"u.city",
+		"u.access_id",
+		"al.name AS access_level",
+	).
+		From("users u").
+		LeftJoin("access_level al ON u.access_id = al.id").
 		Where(sq.Eq{"email": email}).
 		ToSql()
 	if err != nil {
@@ -73,10 +99,12 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (entity.User
 		&result.ID,
 		&result.Email,
 		&result.Password,
-		&result.Username,
+		&tmpUsername,
 		&tmpName,
 		&tmpSurname,
+		&tmpCity,
 		&result.AccessLevelId,
+		&result.AccessLevelName,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -86,16 +114,24 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (entity.User
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	result.Name = ""
 	if tmpName.Valid {
 		result.Name = tmpName.String
-	} else {
-		result.Name = ""
 	}
 
+	result.Surname = ""
 	if tmpSurname.Valid {
 		result.Surname = tmpSurname.String
-	} else {
-		result.Surname = ""
+	}
+
+	result.Username = ""
+	if tmpUsername.Valid {
+		result.Username = tmpUsername.String
+	}
+
+	result.City = ""
+	if tmpCity.Valid {
+		result.City = tmpCity.String
 	}
 
 	return result, nil
@@ -105,24 +141,70 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (entity.User
 func (a *AuthRepository) GetUserById(ctx context.Context, id int) (entity.User, error) {
 	const op = "repository.GetUser"
 
-	var result entity.User
-	s, args, err := a.Builder.Select("*").
-		From("users").
-		Where(sq.Eq{"id": id}).
-		PlaceholderFormat(sq.Dollar).
+	var (
+		tmpName     sql.NullString
+		tmpSurname  sql.NullString
+		tmpUsername sql.NullString
+		tmpCity     sql.NullString
+	)
+
+	s, args, err := a.Builder.Select(
+		"u.id",
+		"u.email",
+		"u.password",
+		"u.username",
+		"u.name",
+		"u.surname",
+		"u.city",
+		"u.access_id",
+		"al.name AS access_level",
+	).
+		From("users u").
+		LeftJoin("access_level al ON u.access_id = al.id").
+		Where(sq.Eq{"u.id": id}).
 		ToSql()
 	if err != nil {
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	err = a.Pool.QueryRow(ctx, s, args...).Scan(&result.ID, &result.Email, &result.Password, &result.Username,
-		&result.Name, &result.Surname, &result.AccessLevelId)
+	var result entity.User
+	err = a.Pool.QueryRow(ctx, s, args...).Scan(
+		&result.ID,
+		&result.Email,
+		&result.Password,
+		&tmpUsername,
+		&tmpName,
+		&tmpSurname,
+		&tmpCity,
+		&result.AccessLevelId,
+		&result.AccessLevelName,
+	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return entity.User{}, fmt.Errorf("%s: %w", op, DataBase.ErrUserNotFound)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.User{}, DataBase.ErrUserNotFound
 		}
 
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	result.Name = ""
+	if tmpName.Valid {
+		result.Name = tmpName.String
+	}
+
+	result.Surname = ""
+	if tmpSurname.Valid {
+		result.Surname = tmpSurname.String
+	}
+
+	result.Username = ""
+	if tmpUsername.Valid {
+		result.Username = tmpUsername.String
+	}
+
+	result.City = ""
+	if tmpCity.Valid {
+		result.City = tmpCity.String
 	}
 
 	return result, nil
@@ -131,13 +213,21 @@ func (a *AuthRepository) GetUserById(ctx context.Context, id int) (entity.User, 
 func (a *AuthRepository) DeleteUser(ctx context.Context, id int) error {
 	const op = "repository.DeleteUser"
 
-	s, args, err := a.Builder.Delete("users").Where(sq.Eq{"id": id}).ToSql()
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
+	if err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
+		sqlReq, args, err := a.Builder.
+			Delete("users").
+			Where(sq.Eq{"id": id}).
+			ToSql()
+		if err != nil {
+			return fmt.Errorf("%s: build sql: %w", op, err)
+		}
 
-	_, err = a.Pool.Exec(ctx, s, args...)
-	if err != nil {
+		if _, err := tx.Exec(ctx, sqlReq, args...); err != nil {
+			return fmt.Errorf("%s: exec: %w", op, err)
+		}
+
+		return nil
+	}); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -147,22 +237,56 @@ func (a *AuthRepository) DeleteUser(ctx context.Context, id int) error {
 func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (entity.User, error) {
 	const op = "repository.UpdateUser"
 
-	s, args, err := a.Builder.Update("users").
-		Set("email", newUser.Email).
-		Set("password", newUser.Password).
-		Set("username", newUser.Username).
-		Set("name", newUser.Name).
-		Set("surname", newUser.Surname).
-		Where(sq.Eq{"id": newUser.ID}).
-		ToSql()
-	if err != nil {
-		return entity.User{}, fmt.Errorf("%s: %w", op, err)
-	}
+	// TODO обновить логику всех полей: если не приходит поле, то его и не обновляем
+	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
+		sqlReq, args, err := a.Builder.Update("users").
+			Set("email", newUser.Email).
+			Set("password", newUser.Password).
+			Set("username", newUser.Username).
+			Set("name", newUser.Name).
+			Set("surname", newUser.Surname).
+			Set("city", newUser.City).
+			Where(sq.Eq{"id": newUser.ID}).
+			ToSql()
+		if err != nil {
+			return fmt.Errorf("%s: build sql: %w", op, err)
+		}
 
-	_, err = a.Pool.Exec(ctx, s, args...)
+		if _, err = tx.Exec(ctx, sqlReq, args...); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				return DataBase.ErrUserExists
+			}
+
+			return fmt.Errorf("%s: exec: %w", op, err)
+		}
+
+		return nil
+	})
 	if err != nil {
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return newUser, nil
+}
+
+func withTx(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	fn func(tx pgx.Tx) error,
+) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = tx.Rollback(ctx) // безопасно, если Commit уже был
+	}()
+
+	if err = fn(tx); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
