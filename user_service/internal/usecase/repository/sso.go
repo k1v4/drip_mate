@@ -239,13 +239,28 @@ func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (e
 
 	// TODO обновить логику всех полей: если не приходит поле, то его и не обновляем
 	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
-		sqlReq, args, err := a.Builder.Update("users").
-			Set("email", newUser.Email).
-			Set("password", newUser.Password).
-			Set("username", newUser.Username).
-			Set("name", newUser.Name).
-			Set("surname", newUser.Surname).
-			Set("city", newUser.City).
+		builder := a.Builder.Update("users")
+
+		if newUser.Email != "" {
+			builder = builder.Set("email", newUser.Email)
+		}
+		if len(newUser.Password) != 0 {
+			builder = builder.Set("password", newUser.Password)
+		}
+		if newUser.Username != "" {
+			builder = builder.Set("username", newUser.Username)
+		}
+		if newUser.Name != "" {
+			builder = builder.Set("name", newUser.Name)
+		}
+		if newUser.Surname != "" {
+			builder = builder.Set("surname", newUser.Surname)
+		}
+		if newUser.City != "" {
+			builder = builder.Set("city", newUser.City)
+		}
+
+		sqlReq, args, err := builder.
 			Where(sq.Eq{"id": newUser.ID}).
 			ToSql()
 		if err != nil {
