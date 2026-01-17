@@ -10,7 +10,7 @@ type ISsoRepository interface {
 	GetUser(ctx context.Context, email string) (entity.User, error)
 	GetUserById(ctx context.Context, id int) (entity.User, error)
 	DeleteUser(ctx context.Context, id int) error
-	UpdateUser(ctx context.Context, newUser entity.User) (entity.User, error)
+	UpdateUser(ctx context.Context, newUser entity.User) (int, error)
 }
 
 type ISsoService interface {

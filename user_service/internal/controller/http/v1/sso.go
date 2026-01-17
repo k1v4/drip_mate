@@ -43,7 +43,7 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 
 	u := new(entity.LoginRequest)
 	if err := c.Bind(u); err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal error")
+		errorResponse(c, http.StatusBadRequest, "bad request")
 
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -87,7 +87,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 
 	u := new(entity.RegisterRequest)
 	if err := c.Bind(u); err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal error")
+		errorResponse(c, http.StatusBadRequest, "bad request")
 
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -146,7 +146,7 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 
 	u := new(entity.UpdateUserRequest)
 	if err = c.Bind(u); err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal error")
+		errorResponse(c, http.StatusBadRequest, "bad request")
 
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -157,21 +157,15 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 		return fmt.Errorf("%s: %w", op, errors.New("bad request"))
 	}
 
-	_, err = r.t.UpdateUserInfo(ctx, userId, u.Email, u.Password, u.Name, u.Surname, u.Username, u.City)
+	user, err := r.t.UpdateUserInfo(ctx, userId, u.Email, u.Password, u.Name, u.Surname, u.Username, u.City)
 	if err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal_old error")
+		errorResponse(c, http.StatusInternalServerError, "internal error")
 
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return c.JSON(http.StatusOK, entity.UpdateUserResponse{
-		User: entity.User{
-			ID:       userId,
-			Email:    u.Email,
-			Name:     u.Name,
-			Surname:  u.Surname,
-			Username: u.Username,
-		},
+		User: user,
 	})
 }
 
@@ -198,7 +192,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 
 	isSucceed, err := r.t.DeleteAccount(ctx, userId)
 	if err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal_old error")
+		errorResponse(c, http.StatusInternalServerError, "internal error")
 
 		return fmt.Errorf("%s: %w", op, err)
 	}

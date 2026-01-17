@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// TODO унести в конфиг
 const secret = "secret"
 
 func ExtractToken(c echo.Context) string {

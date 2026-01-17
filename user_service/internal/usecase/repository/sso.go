@@ -234,10 +234,9 @@ func (a *AuthRepository) DeleteUser(ctx context.Context, id int) error {
 	return nil
 }
 
-func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (entity.User, error) {
+func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (int, error) {
 	const op = "repository.UpdateUser"
 
-	// TODO обновить логику всех полей: если не приходит поле, то его и не обновляем
 	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
 		builder := a.Builder.Update("users")
 
@@ -279,10 +278,10 @@ func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (e
 		return nil
 	})
 	if err != nil {
-		return entity.User{}, fmt.Errorf("%s: %w", op, err)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return newUser, nil
+	return newUser.ID, nil
 }
 
 func withTx(

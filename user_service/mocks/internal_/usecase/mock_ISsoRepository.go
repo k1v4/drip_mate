@@ -242,22 +242,22 @@ func (_c *ISsoRepository_SaveUser_Call) RunAndReturn(run func(context.Context, s
 }
 
 // UpdateUser provides a mock function with given fields: ctx, newUser
-func (_m *ISsoRepository) UpdateUser(ctx context.Context, newUser entity.User) (entity.User, error) {
+func (_m *ISsoRepository) UpdateUser(ctx context.Context, newUser entity.User) (int, error) {
 	ret := _m.Called(ctx, newUser)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUser")
 	}
 
-	var r0 entity.User
+	var r0 int
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, entity.User) (entity.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, entity.User) (int, error)); ok {
 		return rf(ctx, newUser)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, entity.User) entity.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, entity.User) int); ok {
 		r0 = rf(ctx, newUser)
 	} else {
-		r0 = ret.Get(0).(entity.User)
+		r0 = ret.Get(0).(int)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, entity.User) error); ok {
@@ -288,12 +288,12 @@ func (_c *ISsoRepository_UpdateUser_Call) Run(run func(ctx context.Context, newU
 	return _c
 }
 
-func (_c *ISsoRepository_UpdateUser_Call) Return(_a0 entity.User, _a1 error) *ISsoRepository_UpdateUser_Call {
+func (_c *ISsoRepository_UpdateUser_Call) Return(_a0 int, _a1 error) *ISsoRepository_UpdateUser_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ISsoRepository_UpdateUser_Call) RunAndReturn(run func(context.Context, entity.User) (entity.User, error)) *ISsoRepository_UpdateUser_Call {
+func (_c *ISsoRepository_UpdateUser_Call) RunAndReturn(run func(context.Context, entity.User) (int, error)) *ISsoRepository_UpdateUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

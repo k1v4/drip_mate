@@ -111,20 +111,25 @@ func (s *AuthUseCase) UpdateUserInfo(
 ) (entity.User, error) {
 	const op = "service.UpdateUserInfo"
 
-	passhash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	user, err := s.repo.UpdateUser(ctx, entity.User{
+	userID, err := s.repo.UpdateUser(ctx, entity.User{
 		ID:       id,
 		Email:    email,
-		Password: passhash,
+		Password: passHash,
 		Name:     name,
 		Surname:  surname,
 		Username: username,
 		City:     city,
 	})
+	if err != nil {
+		return entity.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	user, err := s.repo.GetUserById(ctx, userID)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
