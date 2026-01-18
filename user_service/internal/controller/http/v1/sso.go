@@ -44,18 +44,21 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 	u := new(entity.LoginRequest)
 	if err := c.Bind(u); err != nil {
 		errorResponse(c, http.StatusBadRequest, "bad request")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	if len(u.Password) == 0 || len([]rune(u.Email)) == 0 {
 		errorResponse(c, http.StatusBadRequest, "bad request")
 
+		r.l.Error(ctx, fmt.Sprintf("%s: invalid params", op))
 		return fmt.Errorf("%s: %w", op, errors.New("bad request"))
 	}
 
-	access_id, accessToken, refreshToken, err := r.t.Login(ctx, u.Email, u.Password)
+	accessID, accessToken, refreshToken, err := r.t.Login(ctx, u.Email, u.Password)
 	if err != nil {
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
+
 		if errors.Is(err, usecase.ErrInvalidCredentials) {
 			errorResponse(c, http.StatusUnauthorized, "invalid credentials")
 
@@ -76,7 +79,7 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 	return c.JSON(http.StatusOK, entity.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		AccessId:     access_id,
+		AccessId:     accessID,
 	})
 }
 
@@ -89,23 +92,28 @@ func (r *containerRoutes) Register(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		errorResponse(c, http.StatusBadRequest, "bad request")
 
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	if len([]rune(u.Password)) < 10 {
 		errorResponse(c, http.StatusBadRequest, "password must be equal or longer than 10")
 
+		r.l.Error(ctx, fmt.Sprintf("%s: invalid password", op))
 		return fmt.Errorf("%s: %w", op, errors.New("password must be equal or longer than 10"))
 	}
 
 	if len([]rune(u.Email)) == 0 {
 		errorResponse(c, http.StatusBadRequest, "email is required")
 
+		r.l.Error(ctx, fmt.Sprintf("%s: invalid email", op))
 		return fmt.Errorf("%s: %w", op, errors.New("email is required"))
 	}
 
 	register, err := r.t.Register(ctx, u.Email, u.Password)
 	if err != nil {
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
+
 		if errors.Is(err, usecase.ErrUserExist) {
 			errorResponse(c, http.StatusUnauthorized, "email or username is exist")
 
@@ -126,11 +134,13 @@ func (r *containerRoutes) Register(c echo.Context) error {
 func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 	const op = "controller.UpdateUserInfo"
 
+	ctx := c.Request().Context()
+
 	// достаём access token
 	token := jwtPkg.ExtractToken(c)
 	if token == "" {
 		errorResponse(c, http.StatusUnauthorized, "token is required")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: no token", op))
 		return fmt.Errorf("%s: %s", op, "token is required")
 	}
 
@@ -138,29 +148,27 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 	userId, err := jwtPkg.ValidateTokenAndGetUserId(token)
 	if err != nil {
 		errorResponse(c, http.StatusUnauthorized, "wrong token")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %s", op, err)
 	}
-
-	ctx := c.Request().Context()
 
 	u := new(entity.UpdateUserRequest)
 	if err = c.Bind(u); err != nil {
 		errorResponse(c, http.StatusBadRequest, "bad request")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if len(u.Password) < 10 || len(u.Email) == 0 {
+	if len(u.Password) < 10 && len(u.Password) > 0 {
 		errorResponse(c, http.StatusBadRequest, "bad request")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: invalid password", op))
 		return fmt.Errorf("%s: %w", op, errors.New("bad request"))
 	}
 
 	user, err := r.t.UpdateUserInfo(ctx, userId, u.Email, u.Password, u.Name, u.Surname, u.Username, u.City)
 	if err != nil {
 		errorResponse(c, http.StatusInternalServerError, "internal error")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -193,7 +201,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	isSucceed, err := r.t.DeleteAccount(ctx, userId)
 	if err != nil {
 		errorResponse(c, http.StatusInternalServerError, "internal error")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

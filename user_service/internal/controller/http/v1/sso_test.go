@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,7 +10,8 @@ import (
 	"time"
 	"user_service/internal/entity"
 	"user_service/internal/usecase"
-	mocks "user_service/mocks/internal_/usecase"
+	mocksInternal "user_service/mocks/internal_/usecase"
+	mocksPks "user_service/mocks/pkg/logger"
 	"user_service/pkg/jwtpkg"
 
 	"github.com/labstack/echo/v4"
@@ -25,8 +27,9 @@ func setupEcho() *echo.Echo {
 
 func TestAuthController_Login(t *testing.T) {
 	e := setupEcho()
-	mockSvc := mocks.NewISsoService(t)
-	newSsoRoutes(e.Group("/api/v1"), mockSvc, nil)
+	mockSvc := mocksInternal.NewISsoService(t)
+	mockLogger := mocksPks.NewLogger(t)
+	newSsoRoutes(e.Group("/api/v1"), mockSvc, mockLogger)
 
 	tests := []struct {
 		name           string
@@ -49,16 +52,20 @@ func TestAuthController_Login(t *testing.T) {
 			expectedBody:   `{"access_token":"access-token","refresh_token":"refresh-token","access_id":1}`,
 		},
 		{
-			name:           "invalid request",
-			reqBody:        `not json`,
-			mockReturn:     func() {},
+			name:    "invalid request",
+			reqBody: `not json`,
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: code=400, message=Syntax error: offset=2, error=invalid character 'o' in literal null (expecting 'u'), internal=invalid character 'o' in literal null (expecting 'u')").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"bad request"}`,
 		},
 		{
-			name:           "empty password",
-			reqBody:        `{"email":"user@mail.com","password":""}`,
-			mockReturn:     func() {},
+			name:    "empty password",
+			reqBody: `{"email":"user@mail.com","password":""}`,
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: invalid params").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"bad request"}`,
 		},
@@ -71,6 +78,7 @@ func TestAuthController_Login(t *testing.T) {
 					Login(mock.Anything, "user@mail.com", "wrong").
 					Return(0, "", "", usecase.ErrInvalidCredentials).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: invalid credentials").Return().Once()
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `{"error":"invalid credentials"}`,
@@ -84,6 +92,7 @@ func TestAuthController_Login(t *testing.T) {
 					Login(mock.Anything, "nouser@mail.com", "password123").
 					Return(0, "", "", usecase.ErrNoUser).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: user not exist").Return().Once()
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `{"error":"no user"}`,
@@ -97,6 +106,7 @@ func TestAuthController_Login(t *testing.T) {
 					Login(mock.Anything, "user@mail.com", "password123").
 					Return(0, "", "", errors.New("something bad")).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: something bad").Return().Once()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `{"error":"internal error"}`,
@@ -112,7 +122,7 @@ func TestAuthController_Login(t *testing.T) {
 
 			tc.mockReturn()
 
-			handler := &containerRoutes{t: mockSvc, l: nil}
+			handler := &containerRoutes{t: mockSvc, l: mockLogger}
 			_ = handler.Auth(ctx)
 
 			assert.Equal(t, tc.expectedStatus, rec.Code)
@@ -125,8 +135,9 @@ func TestAuthController_Login(t *testing.T) {
 
 func TestAuthController_Register(t *testing.T) {
 	e := setupEcho()
-	mockSvc := mocks.NewISsoService(t)
-	handler := &containerRoutes{t: mockSvc, l: nil}
+	mockSvc := mocksInternal.NewISsoService(t)
+	mockLogger := mocksPks.NewLogger(t)
+	handler := &containerRoutes{t: mockSvc, l: mockLogger}
 
 	tests := []struct {
 		name           string
@@ -148,23 +159,29 @@ func TestAuthController_Register(t *testing.T) {
 			expectedBody:   `{"user_id":10}`,
 		},
 		{
-			name:           "invalid request",
-			reqBody:        `not json`,
-			mockReturn:     func() {},
+			name:    "invalid request",
+			reqBody: `not json`,
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: code=400, message=Syntax error: offset=2, error=invalid character 'o' in literal null (expecting 'u'), internal=invalid character 'o' in literal null (expecting 'u')").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"bad request"}`,
 		},
 		{
-			name:           "short password",
-			reqBody:        `{"email":"short@mail.com","password":"123"}`,
-			mockReturn:     func() {},
+			name:    "short password",
+			reqBody: `{"email":"short@mail.com","password":"123"}`,
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: invalid password").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"password must be equal or longer than 10"}`,
 		},
 		{
-			name:           "empty email",
-			reqBody:        `{"email":"","password":"password12345"}`,
-			mockReturn:     func() {},
+			name:    "empty email",
+			reqBody: `{"email":"","password":"password12345"}`,
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: invalid email").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"email is required"}`,
 		},
@@ -176,18 +193,20 @@ func TestAuthController_Register(t *testing.T) {
 					Register(mock.Anything, "exist@mail.com", "password12345").
 					Return(0, usecase.ErrUserExist).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: user exist").Return().Once()
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `{"error":"email or username is exist"}`,
 		},
 		{
-			name:    "user exist",
+			name:    "usecase error",
 			reqBody: `{"email":"exist@mail.com","password":"password12345"}`,
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
 					Return(0, errors.New("something bad")).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: something bad").Return().Once()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `{"error":"internal error"}`,
@@ -214,8 +233,9 @@ func TestAuthController_Register(t *testing.T) {
 
 func TestAuthController_UpdateUserInfo(t *testing.T) {
 	e := setupEcho()
-	mockSvc := mocks.NewISsoService(t)
-	handler := &containerRoutes{t: mockSvc, l: nil}
+	mockSvc := mocksInternal.NewISsoService(t)
+	mockLogger := mocksPks.NewLogger(t)
+	handler := &containerRoutes{t: mockSvc, l: mockLogger}
 
 	tests := []struct {
 		name           string
@@ -248,51 +268,51 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 				mockSvc.EXPECT().
 					UpdateUserInfo(mock.Anything, 1, "upd@mail.com", "password12345", "John", "Doe", "jdoe", "NY").
 					Return(entity.User{}, errors.New("usecase error")).Once()
+				mockLogger.EXPECT().Error(mock.Anything, fmt.Sprintf("%s: usecase error", "controller.UpdateUserInfo")).Return().Once()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `"error":"internal error"`,
 		},
 		{
-			name:           "invalid password",
-			reqBody:        `{"email":"upd@mail.com","password":"short","name":"John","surname":"Doe","username":"jdoe","city":"NY"}`,
-			needToken:      true,
-			token:          "valid-token",
-			mockReturn:     func() {},
+			name:      "invalid password",
+			reqBody:   `{"email":"upd@mail.com","password":"short","name":"John","surname":"Doe","username":"jdoe","city":"NY"}`,
+			needToken: true,
+			token:     "valid-token",
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, fmt.Sprintf("%s: invalid password", "controller.UpdateUserInfo")).Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `"error":"bad request"`,
 		},
 		{
-			name:           "no email",
-			reqBody:        `{"password":"password12345","name":"John","surname":"Doe","username":"jdoe","city":"NY"}`,
-			needToken:      true,
-			token:          "valid-token",
-			mockReturn:     func() {},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `"error":"bad request"`,
-		},
-		{
-			name:           "wrong token",
-			needToken:      false,
-			token:          "valid-token",
-			mockReturn:     func() {},
+			name:      "wrong token",
+			needToken: false,
+			token:     "valid-token",
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.UpdateUserInfo: token is malformed: token contains an invalid number of segments").Return().Once()
+			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `"error":"wrong token"`,
 		},
 		{
-			name:           "wrong request",
-			reqBody:        `not a json`,
-			needToken:      true,
-			token:          "valid-token",
-			mockReturn:     func() {},
+			name:      "wrong request",
+			reqBody:   `not a json`,
+			needToken: true,
+			token:     "valid-token",
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.UpdateUserInfo: code=400, message=Syntax error: offset=2, error=invalid character 'o' in literal null (expecting 'u'), internal=invalid character 'o' in literal null (expecting 'u')").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `"error":"bad request"`,
 		},
 		{
-			name:           "no token",
-			needToken:      false,
-			reqBody:        `{}`,
-			token:          "",
-			mockReturn:     func() {},
+			name:      "no token",
+			needToken: false,
+			reqBody:   `{}`,
+			token:     "",
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.UpdateUserInfo: no token").Return().Once()
+			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   "token is required",
 		},
@@ -327,8 +347,9 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 
 func TestAuthController_DeleteAccount(t *testing.T) {
 	e := setupEcho()
-	mockSvc := mocks.NewISsoService(t)
-	handler := &containerRoutes{t: mockSvc, l: nil}
+	mockSvc := mocksInternal.NewISsoService(t)
+	mockLogger := mocksPks.NewLogger(t)
+	handler := &containerRoutes{t: mockSvc, l: mockLogger}
 
 	tests := []struct {
 		name           string
@@ -360,6 +381,7 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 					DeleteAccount(mock.Anything, 1).
 					Return(false, errors.New("usecase_error")).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.DeleteAccount: usecase_error").Return().Once()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `{"error":"internal error"}`,
@@ -410,8 +432,9 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 
 func TestAuthController_RefreshToken(t *testing.T) {
 	e := setupEcho()
-	mockSvc := mocks.NewISsoService(t)
-	handler := &containerRoutes{t: mockSvc, l: nil}
+	mockSvc := mocksInternal.NewISsoService(t)
+	mockLogger := mocksPks.NewLogger(t)
+	handler := &containerRoutes{t: mockSvc, l: mockLogger}
 
 	tests := []struct {
 		name           string

@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  auth:
+  user:
     build: ./user_service
-    container_name: auth
+    container_name: user
     env_file:
       - user_service/.env
     ports:
-      - "${REST_AUTH_PORT}:${REST_AUTH_PORT}"  # 8080:8080
+      - "${REST_USER_PORT}:${REST_USER_PORT}"  # 8080:8080
     depends_on:
       postgres:
         condition: service_healthy
