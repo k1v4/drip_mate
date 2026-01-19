@@ -6,9 +6,9 @@ COVERPKGS := $(shell go list ./... | grep -v mocks | grep -v repository | grep -
 
 COVERAGE_MIN := 70
 
-.PHONY: all generate-mocks format lint test
+.PHONY: all format lint test
 
-all: generate-mocks format lint test
+all: format lint test
 
 generate-mocks:
 	$(MOCKER) --config=mockery.yml

@@ -180,11 +180,13 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	const op = "controller.DeleteAccount"
 
+	ctx := c.Request().Context()
+
 	// достаём access token
 	token := jwtPkg.ExtractToken(c)
 	if token == "" {
 		errorResponse(c, http.StatusBadRequest, "bad request")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: token is required", op))
 		return fmt.Errorf("%s: %s", op, "token is required")
 	}
 
@@ -192,11 +194,9 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	userId, err := jwtPkg.ValidateTokenAndGetUserId(token)
 	if err != nil {
 		errorResponse(c, http.StatusUnauthorized, "bad request")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %s", op, err)
 	}
-
-	ctx := c.Request().Context()
 
 	isSucceed, err := r.t.DeleteAccount(ctx, userId)
 	if err != nil {
@@ -219,7 +219,7 @@ func (r *containerRoutes) RefreshToken(c echo.Context) error {
 	accessToken, refreshToken, err := r.t.RefreshToken(ctx, refreshTokenOld)
 	if err != nil {
 		errorResponse(c, http.StatusUnauthorized, "token error")
-
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

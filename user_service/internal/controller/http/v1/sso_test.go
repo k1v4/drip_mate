@@ -387,18 +387,22 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 			expectedBody:   `{"error":"internal error"}`,
 		},
 		{
-			name:           "invalid token",
-			needToken:      false,
-			token:          "invalid-token",
-			mockReturn:     func() {},
+			name:      "invalid token",
+			needToken: false,
+			token:     "invalid-token",
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.DeleteAccount: token is malformed: token contains an invalid number of segments").Return().Once()
+			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `{"error":"bad request"}`,
 		},
 		{
-			name:           "no token",
-			needToken:      false,
-			token:          "",
-			mockReturn:     func() {},
+			name:      "no token",
+			needToken: false,
+			token:     "",
+			mockReturn: func() {
+				mockLogger.EXPECT().Error(mock.Anything, "controller.DeleteAccount: token is required").Return().Once()
+			},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "bad request",
 		},
@@ -463,6 +467,7 @@ func TestAuthController_RefreshToken(t *testing.T) {
 					RefreshToken(mock.Anything, "bad-refresh").
 					Return("", "", errors.New("invalid")).
 					Once()
+				mockLogger.EXPECT().Error(mock.Anything, "controller.RefreshToken: invalid").Return().Once()
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   "token error",
