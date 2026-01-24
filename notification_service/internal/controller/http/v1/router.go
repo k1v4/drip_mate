@@ -3,14 +3,13 @@ package v1
 import (
 	"net/http"
 
-	"notification_service/internal/usecase"
 	"notification_service/pkg/logger"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func NewRouter(handler *echo.Echo, l logger.Logger, t usecase.ISsoService) {
+func NewRouter(handler *echo.Echo, l logger.Logger) {
 	// Middleware
 	handler.Use(middleware.RequestLogger())
 	handler.Use(middleware.Recover())
@@ -24,9 +23,4 @@ func NewRouter(handler *echo.Echo, l logger.Logger, t usecase.ISsoService) {
 	handler.GET("/api/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
-
-	h := handler.Group("/api/v1")
-	{
-		newSsoRoutes(h, t, l)
-	}
 }

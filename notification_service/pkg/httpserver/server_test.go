@@ -25,7 +25,7 @@ func TestServerOptions(t *testing.T) {
 		{
 			name:             "defaults",
 			options:          nil,
-			expectedAddr:     ":8080",
+			expectedAddr:     ":8081",
 			expectedRead:     5 * time.Second,
 			expectedWrite:    5 * time.Second,
 			expectedShutdown: 3 * time.Second,
@@ -46,7 +46,7 @@ func TestServerOptions(t *testing.T) {
 				ReadTimeout(10 * time.Second),
 				WriteTimeout(15 * time.Second),
 			},
-			expectedAddr:     ":8080",
+			expectedAddr:     ":8081",
 			expectedRead:     10 * time.Second,
 			expectedWrite:    15 * time.Second,
 			expectedShutdown: 3 * time.Second,
@@ -56,7 +56,7 @@ func TestServerOptions(t *testing.T) {
 			options: []Option{
 				ShutdownTimeout(7 * time.Second),
 			},
-			expectedAddr:     ":8080",
+			expectedAddr:     ":8081",
 			expectedRead:     5 * time.Second,
 			expectedWrite:    5 * time.Second,
 			expectedShutdown: 7 * time.Second,
