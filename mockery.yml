@@ -8,7 +8,7 @@ outpkg: mocks
 disable-func-mocks: True
 
 packages:
-  "github.com/k1v4/drip_mate/internal/modules/user_service/:
+  "github.com/k1v4/drip_mate/internal/modules/":
     config:
       all: true
       exclude: [
@@ -16,7 +16,7 @@ packages:
         "pkg/tests",
       ]
       recursive: true
-  user_service/pkg:
+  pkg:
     config:
       all: true
       exclude: [

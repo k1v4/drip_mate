@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	
+
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"

@@ -3,7 +3,7 @@ package adapter
 import (
 	"fmt"
 	"os"
-	
+
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
 
 	"github.com/sendgrid/sendgrid-go"

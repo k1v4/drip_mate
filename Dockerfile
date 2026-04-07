@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26.1-alpine AS builder
 
 WORKDIR /usr/local/src
 
@@ -14,6 +14,6 @@ COPY --from=builder /usr/local/src/bin/app /
 
 EXPOSE 8080 50051
 
-COPY user_profile.env /
+COPY .env /
 
 CMD ["/app"]
