@@ -4,7 +4,6 @@ package mocks
 
 import (
 	entity "github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

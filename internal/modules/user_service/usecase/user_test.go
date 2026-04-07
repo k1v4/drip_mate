@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
-	mocks "github.com/k1v4/drip_mate/internal/modules/user_service/mocks/internal_/usecase"
+	mocks "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/fake"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"

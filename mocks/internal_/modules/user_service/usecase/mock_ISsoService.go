@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	entity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

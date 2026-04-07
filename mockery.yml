@@ -16,7 +16,7 @@ packages:
         "pkg/tests",
       ]
       recursive: true
-  pkg:
+  "github.com/k1v4/drip_mate/pkg":
     config:
       all: true
       exclude: [

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
-	mocksInternal "github.com/k1v4/drip_mate/internal/modules/user_service/mocks/internal_/usecase"
-	mocksPks "github.com/k1v4/drip_mate/internal/modules/user_service/mocks/pkg/logger"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
+	mocksInternal "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
+	mocksPks "github.com/k1v4/drip_mate/mocks/pkg/logger"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"
 
 	"github.com/labstack/echo/v4"
