@@ -5,7 +5,7 @@ services:
     build: ./user_service
     container_name: user
     env_file:
-      - user_service/.env
+      - user_service/user_profile.env
     ports:
       - "${REST_USER_PORT}:${REST_USER_PORT}"  # 8080:8080
     depends_on:
