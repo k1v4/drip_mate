@@ -44,16 +44,13 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 
 	u := new(entity.LoginRequest)
 	if err := c.Bind(u); err != nil {
-		errorResponse(c, http.StatusBadRequest, "bad request")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "bad request"}).SetInternal(err)
 	}
 
 	if len(u.Password) == 0 || len([]rune(u.Email)) == 0 {
-		errorResponse(c, http.StatusBadRequest, "bad request")
-
 		r.l.Error(ctx, fmt.Sprintf("%s: invalid params", op))
-		return fmt.Errorf("%s: %w", op, errors.New("bad request"))
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "bad request"}).SetInternal(errors.New("пропущено поле"))
 	}
 
 	accessID, accessToken, refreshToken, err := r.t.Login(ctx, u.Email, u.Password)
@@ -77,6 +74,7 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	// TODO устанавливать стразу в куки
 	return c.JSON(http.StatusOK, entity.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,

@@ -6,7 +6,9 @@ import (
 )
 
 type Config struct {
-	RestServerPort int `env:"REST_SERVER_PORT" env-description:"rest server port" env-default:"8081"`
+	RestServerPort int    `env:"REST_SERVER_PORT" env-required:"true" env-description:"rest server port"`
+	URL            string `json:"url" env:"URL" env-required:"true" env-description:"db connection string"`
+	PoolMax        int    `json:"poolMax" env:"POOL_MAX" env-required:"true" env-description:"db pool max"`
 }
 
 func MustLoadConfig() *Config {

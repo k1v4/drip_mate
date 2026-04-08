@@ -33,7 +33,7 @@ func (en *EmailNotificationUseCase) SendEmailNotification(ctx context.Context, t
 	}
 
 	if result.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to send email via not success code responce")
+		return fmt.Errorf("failed to send email via not success code response")
 	}
 
 	return nil
