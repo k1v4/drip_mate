@@ -10,7 +10,7 @@ func CreateUser(email, password string, accessLevel int) entity.User {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	return entity.User{
-		ID:            1,
+		ID:            "1",
 		Email:         email,
 		Password:      hashedPassword,
 		AccessLevelId: accessLevel,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func TestUser_MarshalUnmarshalBinary(t *testing.T) {
 		{
 			name: "all fields filled",
 			user: entity.User{
-				ID:              1,
+				ID:              gofakeit.UUID(),
 				Email:           "test@mail.com",
 				Password:        []byte("secret"),
 				Name:            "John",
@@ -31,7 +32,7 @@ func TestUser_MarshalUnmarshalBinary(t *testing.T) {
 		{
 			name: "empty optional fields",
 			user: entity.User{
-				ID:    2,
+				ID:    gofakeit.UUID(),
 				Email: "empty@mail.com",
 			},
 		},

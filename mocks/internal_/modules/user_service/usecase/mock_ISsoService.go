@@ -23,7 +23,7 @@ func (_m *ISsoService) EXPECT() *ISsoService_Expecter {
 }
 
 // DeleteAccount provides a mock function with given fields: ctx, id
-func (_m *ISsoService) DeleteAccount(ctx context.Context, id int) (bool, error) {
+func (_m *ISsoService) DeleteAccount(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
@@ -32,16 +32,16 @@ func (_m *ISsoService) DeleteAccount(ctx context.Context, id int) (bool, error) 
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
@@ -57,14 +57,14 @@ type ISsoService_DeleteAccount_Call struct {
 
 // DeleteAccount is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id int
+//   - id string
 func (_e *ISsoService_Expecter) DeleteAccount(ctx interface{}, id interface{}) *ISsoService_DeleteAccount_Call {
 	return &ISsoService_DeleteAccount_Call{Call: _e.mock.On("DeleteAccount", ctx, id)}
 }
 
-func (_c *ISsoService_DeleteAccount_Call) Run(run func(ctx context.Context, id int)) *ISsoService_DeleteAccount_Call {
+func (_c *ISsoService_DeleteAccount_Call) Run(run func(ctx context.Context, id string)) *ISsoService_DeleteAccount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -74,7 +74,7 @@ func (_c *ISsoService_DeleteAccount_Call) Return(_a0 bool, _a1 error) *ISsoServi
 	return _c
 }
 
-func (_c *ISsoService_DeleteAccount_Call) RunAndReturn(run func(context.Context, int) (bool, error)) *ISsoService_DeleteAccount_Call {
+func (_c *ISsoService_DeleteAccount_Call) RunAndReturn(run func(context.Context, string) (bool, error)) *ISsoService_DeleteAccount_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -216,22 +216,22 @@ func (_c *ISsoService_RefreshToken_Call) RunAndReturn(run func(context.Context, 
 }
 
 // Register provides a mock function with given fields: ctx, email, password
-func (_m *ISsoService) Register(ctx context.Context, email string, password string) (int, error) {
+func (_m *ISsoService) Register(ctx context.Context, email string, password string) (string, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Register")
 	}
 
-	var r0 int
+	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (int, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
 		return rf(ctx, email, password)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) int); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
 		r0 = rf(ctx, email, password)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Get(0).(string)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
@@ -263,18 +263,18 @@ func (_c *ISsoService_Register_Call) Run(run func(ctx context.Context, email str
 	return _c
 }
 
-func (_c *ISsoService_Register_Call) Return(_a0 int, _a1 error) *ISsoService_Register_Call {
+func (_c *ISsoService_Register_Call) Return(_a0 string, _a1 error) *ISsoService_Register_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, string, string) (int, error)) *ISsoService_Register_Call {
+func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, string, string) (string, error)) *ISsoService_Register_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateUserInfo provides a mock function with given fields: ctx, id, email, password, name, surname, username, city
-func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id int, email string, password string, name string, surname string, username string, city string) (entity.User, error) {
+func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, email string, password string, name string, surname string, username string, city string) (entity.User, error) {
 	ret := _m.Called(ctx, id, email, password, name, surname, username, city)
 
 	if len(ret) == 0 {
@@ -283,16 +283,16 @@ func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id int, email string,
 
 	var r0 entity.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int, string, string, string, string, string, string) (entity.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) (entity.User, error)); ok {
 		return rf(ctx, id, email, password, name, surname, username, city)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int, string, string, string, string, string, string) entity.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) entity.User); ok {
 		r0 = rf(ctx, id, email, password, name, surname, username, city)
 	} else {
 		r0 = ret.Get(0).(entity.User)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int, string, string, string, string, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string) error); ok {
 		r1 = rf(ctx, id, email, password, name, surname, username, city)
 	} else {
 		r1 = ret.Error(1)
@@ -308,7 +308,7 @@ type ISsoService_UpdateUserInfo_Call struct {
 
 // UpdateUserInfo is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id int
+//   - id string
 //   - email string
 //   - password string
 //   - name string
@@ -319,9 +319,9 @@ func (_e *ISsoService_Expecter) UpdateUserInfo(ctx interface{}, id interface{}, 
 	return &ISsoService_UpdateUserInfo_Call{Call: _e.mock.On("UpdateUserInfo", ctx, id, email, password, name, surname, username, city)}
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id int, email string, password string, name string, surname string, username string, city string)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id string, email string, password string, name string, surname string, username string, city string)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(string))
 	})
 	return _c
 }
@@ -331,7 +331,7 @@ func (_c *ISsoService_UpdateUserInfo_Call) Return(_a0 entity.User, _a1 error) *I
 	return _c
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, int, string, string, string, string, string, string) (entity.User, error)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string, string) (entity.User, error)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

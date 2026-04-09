@@ -120,7 +120,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 
 	cases := []struct {
 		name          string
-		id            int
+		id            string
 		email         string
 		password      string
 		mockError     error
@@ -128,7 +128,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 	}{
 		{
 			name:          "success",
-			id:            1,
+			id:            gofakeit.UUID(),
 			email:         gofakeit.Email(),
 			password:      gofakeit.Password(true, true, true, true, true, 12),
 			mockError:     nil,
@@ -136,7 +136,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 		},
 		{
 			name:          "success #2",
-			id:            111,
+			id:            gofakeit.UUID(),
 			email:         gofakeit.Email(),
 			password:      gofakeit.Password(true, true, true, true, true, 12),
 			mockError:     nil,
@@ -144,7 +144,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 		},
 		{
 			name:          "user exist",
-			id:            0,
+			id:            gofakeit.UUID(),
 			email:         gofakeit.Email(),
 			password:      gofakeit.Password(true, true, true, true, true, 12),
 			mockError:     DataBase.ErrUserExists,
@@ -152,7 +152,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 		},
 		{
 			name:          "repo error",
-			id:            0,
+			id:            gofakeit.UUID(),
 			email:         gofakeit.Email(),
 			password:      gofakeit.Password(true, true, true, true, true, 12),
 			mockError:     errors.New("something bad with repo"),
@@ -185,28 +185,28 @@ func TestAuthUseCase_DeleteAccount(t *testing.T) {
 
 	cases := []struct {
 		name          string
-		id            int
+		id            string
 		mockError     error
 		expectedOk    bool
 		expectedError error
 	}{
 		{
 			name:          "success",
-			id:            1,
+			id:            gofakeit.UUID(),
 			mockError:     nil,
 			expectedOk:    true,
 			expectedError: nil,
 		},
 		{
 			name:          "user not found",
-			id:            10,
+			id:            gofakeit.UUID(),
 			mockError:     DataBase.ErrUserNotFound,
 			expectedOk:    false,
 			expectedError: fmt.Errorf("service.DeleteAccount: %w", ErrNoUser),
 		},
 		{
 			name:          "repo error",
-			id:            5,
+			id:            gofakeit.UUID(),
 			mockError:     errors.New("repo failed"),
 			expectedOk:    false,
 			expectedError: fmt.Errorf("service.DeleteAccount: repo failed"),
@@ -245,7 +245,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		name          string
 		inputUser     entity.User
 		password      string
-		updateID      int
+		updateID      string
 		updateErr     error
 		getUser       entity.User
 		getErr        error
@@ -255,7 +255,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		{
 			name: "success",
 			inputUser: entity.User{
-				ID:       1,
+				ID:       gofakeit.UUID(),
 				Email:    gofakeit.Email(),
 				Name:     "John",
 				Surname:  "Doe",
@@ -263,9 +263,9 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 				City:     "Berlin",
 			},
 			password: "strong-password",
-			updateID: 1,
+			updateID: gofakeit.UUID(),
 			getUser: entity.User{
-				ID:       1,
+				ID:       gofakeit.UUID(),
 				Email:    "john@mail.com",
 				Name:     "John",
 				Surname:  "Doe",
@@ -273,7 +273,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 				City:     "Berlin",
 			},
 			expectedUser: entity.User{
-				ID:       1,
+				ID:       gofakeit.UUID(),
 				Email:    "john@mail.com",
 				Name:     "John",
 				Surname:  "Doe",
@@ -284,7 +284,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		{
 			name: "update repo error",
 			inputUser: entity.User{
-				ID:    2,
+				ID:    gofakeit.UUID(),
 				Email: gofakeit.Email(),
 			},
 			password:      "pass",
@@ -294,11 +294,11 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		{
 			name: "get user error",
 			inputUser: entity.User{
-				ID:    3,
+				ID:    gofakeit.UUID(),
 				Email: gofakeit.Email(),
 			},
 			password:      "pass",
-			updateID:      3,
+			updateID:      gofakeit.UUID(),
 			getErr:        errors.New("get failed"),
 			expectedError: fmt.Errorf("service.UpdateUserInfo: get failed"),
 		},

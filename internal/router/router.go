@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	v1_user "github.com/k1v4/drip_mate/internal/modules/user_service/controller/http/v1"
+	v1user "github.com/k1v4/drip_mate/internal/modules/user_service/controller/http/v1"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/logger"
 
@@ -28,6 +28,6 @@ func NewRouter(handler *echo.Echo, l logger.Logger, t usecase.ISsoService) {
 
 	h := handler.Group("/api/v1")
 	{
-		v1_user.NewSsoRoutes(h, t, l)
+		v1user.NewSsoRoutes(h, t, l)
 	}
 }

@@ -73,7 +73,7 @@ func RefreshAccessToken(refreshToken string, duration time.Duration) (string, er
 
 	// Извлекаем данные пользователя из claims
 	user := entity.User{
-		ID:    int(claims["id"].(float64)), // JWT числа возвращает как float64
+		ID:    claims["id"].(string),
 		Email: claims["email"].(string),
 	}
 
@@ -86,7 +86,7 @@ func RefreshAccessToken(refreshToken string, duration time.Duration) (string, er
 	return newAccessToken, nil
 }
 
-func ValidateTokenAndGetUserId(tokenString string) (int, error) {
+func ValidateTokenAndGetUserId(tokenString string) (string, error) {
 	// парсим токен
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// проверяем метод подписи
@@ -96,26 +96,26 @@ func ValidateTokenAndGetUserId(tokenString string) (int, error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	// проверяем claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		// извлекаем userId
-		userId, okUser := claims["id"].(float64)
+		userId, okUser := claims["id"].(string)
 		if !okUser {
-			return 0, fmt.Errorf("userId not found in token")
+			return "", fmt.Errorf("userId not found in token")
 		}
 
 		// проверяем срок действия токена
 		if exp, ok := claims["exp"].(float64); ok {
 			if time.Now().Unix() > int64(exp) {
-				return 0, fmt.Errorf("token expired")
+				return "", fmt.Errorf("token expired")
 			}
 		}
 
-		return int(userId), nil
+		return userId, nil
 	}
 
-	return 0, errors.New("invalid token")
+	return "", errors.New("invalid token")
 }

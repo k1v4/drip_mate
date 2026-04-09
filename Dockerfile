@@ -11,9 +11,11 @@ RUN go build -o ./bin/app cmd/main/main.go
 FROM alpine AS runner
 
 COPY --from=builder /usr/local/src/bin/app /
+COPY --from=builder /usr/local/src/migrations /migrations
 
 EXPOSE 8080 50051
 
 COPY .env /
 
-CMD ["/app"]
+CMD ["/app", "-config=/config/config.yaml"]
+

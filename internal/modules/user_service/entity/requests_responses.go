@@ -22,7 +22,7 @@ type LoginResponse struct {
 }
 
 type IsAdminRequest struct {
-	UserID int64 `json:"user_id"`
+	UserID string `json:"user_id"`
 }
 
 type IsAdminResponse struct {
@@ -30,7 +30,7 @@ type IsAdminResponse struct {
 }
 
 type GetUserRequestById struct {
-	UserID int64 `json:"user_id"`
+	UserID string `json:"user_id"`
 }
 
 type GetUserResponseById struct {

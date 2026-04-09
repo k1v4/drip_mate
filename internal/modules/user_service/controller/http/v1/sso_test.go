@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	mocksInternal "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
@@ -117,7 +119,7 @@ func TestAuthController_Login(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(tc.reqBody))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/login", strings.NewReader(tc.reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			ctx := e.NewContext(req, rec)
 
@@ -153,7 +155,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "new@mail.com", "password12345").
-					Return(10, nil).
+					Return(gofakeit.UUID(), nil).
 					Once()
 			},
 			expectedStatus: http.StatusOK,
@@ -192,7 +194,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return(0, usecase.ErrUserExist).
+					Return("", usecase.ErrUserExist).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: user exist").Return().Once()
 			},
@@ -205,7 +207,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return(0, errors.New("something bad")).
+					Return("", errors.New("something bad")).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: something bad").Return().Once()
 			},
@@ -217,7 +219,7 @@ func TestAuthController_Register(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/register", strings.NewReader(tc.reqBody))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/register", strings.NewReader(tc.reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			ctx := e.NewContext(req, rec)
 
@@ -255,7 +257,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					UpdateUserInfo(mock.Anything, 1, "upd@mail.com", "password12345", "John", "Doe", "jdoe", "NY").
-					Return(entity.User{ID: 1, Email: "upd@mail.com"}, nil).Once()
+					Return(entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com"}, nil).Once()
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   `"email":"upd@mail.com"`,
@@ -322,7 +324,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPut, "/users", strings.NewReader(tc.reqBody))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/users", strings.NewReader(tc.reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			if tc.token != "" {
 				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tc.token)
@@ -330,7 +332,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			ctx := e.NewContext(req, rec)
 
 			if tc.needToken {
-				user := entity.User{ID: 1, Email: "upd@mail.com", AccessLevelId: 1}
+				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
 				token, _ := jwtpkg.NewAccessToken(user, 15*time.Minute)
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
@@ -412,14 +414,14 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodDelete, "/users", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/users", nil)
 			if tc.token != "" {
 				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tc.token)
 			}
 			ctx := e.NewContext(req, rec)
 
 			if tc.needToken {
-				user := entity.User{ID: 1, Email: "upd@mail.com", AccessLevelId: 1}
+				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
 				token, _ := jwtpkg.NewAccessToken(user, 15*time.Minute)
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
@@ -478,7 +480,7 @@ func TestAuthController_RefreshToken(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/refresh", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/refresh", nil)
 			if tc.token != "" {
 				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tc.token)
 			}

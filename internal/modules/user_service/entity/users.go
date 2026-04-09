@@ -3,7 +3,7 @@ package entity
 import "encoding/json"
 
 type User struct {
-	ID              int    `json:"id"`
+	ID              string `json:"id"`
 	Email           string `json:"email"`
 	Password        []byte `json:"-"`
 	Name            string `json:"name"`

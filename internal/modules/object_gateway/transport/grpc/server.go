@@ -20,7 +20,8 @@ type Server struct {
 }
 
 func NewServer(ctx context.Context, grpcPort int, uploadService IUploadService) (*Server, error) {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	lc := net.ListenConfig{}
+	listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

@@ -31,10 +31,10 @@ func (a *AuthRepository) SaveUser(
 	ctx context.Context,
 	email string,
 	password []byte,
-) (int, error) {
+) (string, error) {
 	const op = "repository.SaveUser"
 
-	var id int
+	var id string
 	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
 		sqlReq, args, err := a.Builder.
 			Insert("users").
@@ -59,7 +59,7 @@ func (a *AuthRepository) SaveUser(
 	})
 
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	return id, nil
@@ -139,7 +139,7 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (entity.User
 }
 
 // GetUserById takes user from Database by Id
-func (a *AuthRepository) GetUserById(ctx context.Context, id int) (entity.User, error) {
+func (a *AuthRepository) GetUserById(ctx context.Context, id string) (entity.User, error) {
 	const op = "repository.GetUser"
 
 	var (
@@ -211,7 +211,7 @@ func (a *AuthRepository) GetUserById(ctx context.Context, id int) (entity.User, 
 	return result, nil
 }
 
-func (a *AuthRepository) DeleteUser(ctx context.Context, id int) error {
+func (a *AuthRepository) DeleteUser(ctx context.Context, id string) error {
 	const op = "repository.DeleteUser"
 
 	if err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
@@ -235,7 +235,7 @@ func (a *AuthRepository) DeleteUser(ctx context.Context, id int) error {
 	return nil
 }
 
-func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (int, error) {
+func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (string, error) {
 	const op = "repository.UpdateUser"
 
 	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
@@ -279,7 +279,7 @@ func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (i
 		return nil
 	})
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	return newUser.ID, nil

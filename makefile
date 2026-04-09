@@ -15,6 +15,7 @@ generate-mocks:
 
 format:
 	$(GO) fmt ./...
+	$(GO) fix ./...
 	$(GOIMPORTS) -w .
 
 lint:

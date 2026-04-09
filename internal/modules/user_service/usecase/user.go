@@ -70,27 +70,27 @@ func (s *AuthUseCase) Login(ctx context.Context, email string, password string) 
 
 // Register adds new user to app
 // If user with given email already exists, returns error.
-func (s *AuthUseCase) Register(ctx context.Context, email, password string) (int, error) {
+func (s *AuthUseCase) Register(ctx context.Context, email, password string) (string, error) {
 	const op = "service.Register"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	id, err := s.repo.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, DataBase.ErrUserExists) {
-			return 0, ErrUserExist
+			return "", ErrUserExist
 		}
 
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	return id, nil
 }
 
-func (s *AuthUseCase) DeleteAccount(ctx context.Context, id int) (bool, error) {
+func (s *AuthUseCase) DeleteAccount(ctx context.Context, id string) (bool, error) {
 	const op = "service.DeleteAccount"
 
 	err := s.repo.DeleteUser(ctx, id)
@@ -107,7 +107,7 @@ func (s *AuthUseCase) DeleteAccount(ctx context.Context, id int) (bool, error) {
 
 func (s *AuthUseCase) UpdateUserInfo(
 	ctx context.Context,
-	id int,
+	id string,
 	email, password, name, surname, username, city string,
 ) (entity.User, error) {
 	const op = "service.UpdateUserInfo"

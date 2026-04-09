@@ -53,7 +53,12 @@ func NewLogger() Logger {
 	if err != nil {
 		panic(err)
 	}
-	defer l.Sync()
+	defer func() {
+		err = l.Sync()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	return &logger{
 		serviceName: ServiceName,
