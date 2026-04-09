@@ -58,20 +58,14 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 
 		if errors.Is(err, usecase.ErrInvalidCredentials) {
-			errorResponse(c, http.StatusUnauthorized, "invalid credentials")
-
-			return fmt.Errorf("%s: %w", op, err)
+			return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "invalid credentials"}).SetInternal(err)
 		}
 
 		if errors.Is(err, usecase.ErrNoUser) {
-			errorResponse(c, http.StatusUnauthorized, "no user")
-
-			return fmt.Errorf("%s: %w", op, err)
+			return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "no user"}).SetInternal(err)
 		}
 
-		errorResponse(c, http.StatusInternalServerError, "internal error")
-
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, echo.Map{"error": "internal error"}).SetInternal(err)
 	}
 
 	// TODO устанавливать стразу в куки
@@ -89,24 +83,20 @@ func (r *containerRoutes) Register(c echo.Context) error {
 
 	u := new(entity.RegisterRequest)
 	if err := c.Bind(u); err != nil {
-		errorResponse(c, http.StatusBadRequest, "bad request")
-
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "bad request"}).SetInternal(err)
 	}
 
 	if len([]rune(u.Password)) < 10 {
-		errorResponse(c, http.StatusBadRequest, "password must be equal or longer than 10")
-
+		err := errors.New("password must be equal or longer than 10")
 		r.l.Error(ctx, fmt.Sprintf("%s: invalid password", op))
-		return fmt.Errorf("%s: %w", op, errors.New("password must be equal or longer than 10"))
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "password must be equal or longer than 10"}).SetInternal(err)
 	}
 
 	if len([]rune(u.Email)) == 0 {
-		errorResponse(c, http.StatusBadRequest, "email is required")
-
+		err := errors.New("email is required")
 		r.l.Error(ctx, fmt.Sprintf("%s: invalid email", op))
-		return fmt.Errorf("%s: %w", op, errors.New("email is required"))
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "email is required"}).SetInternal(err)
 	}
 
 	register, err := r.t.Register(ctx, u.Email, u.Password)
@@ -114,17 +104,12 @@ func (r *containerRoutes) Register(c echo.Context) error {
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 
 		if errors.Is(err, usecase.ErrUserExist) {
-			errorResponse(c, http.StatusUnauthorized, "email or username is exist")
-
-			return fmt.Errorf("%s: %w", op, err)
+			return echo.NewHTTPError(http.StatusConflict, echo.Map{"error": "email or username is exist"}).SetInternal(err)
 		}
 
-		errorResponse(c, http.StatusInternalServerError, "internal error")
-
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, echo.Map{"error": "internal error"}).SetInternal(err)
 	}
 
-	// TODO подумать про добавление автоматической авторизации
 	return c.JSON(http.StatusOK, map[string]any{
 		"user_id": register,
 	})
@@ -135,40 +120,35 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	// достаём access token
 	token := jwtPkg.ExtractToken(c)
 	if token == "" {
-		errorResponse(c, http.StatusUnauthorized, "token is required")
+		err := errors.New("token is required")
 		r.l.Error(ctx, fmt.Sprintf("%s: no token", op))
-		return fmt.Errorf("%s: %s", op, "token is required")
+		return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "token is required"}).SetInternal(err)
 	}
 
-	// валидируем токен и достаём id пользователя
 	userId, err := jwtPkg.ValidateTokenAndGetUserId(token)
 	if err != nil {
-		errorResponse(c, http.StatusUnauthorized, "wrong token")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %s", op, err)
+		return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "wrong token"}).SetInternal(err)
 	}
 
 	u := new(entity.UpdateUserRequest)
 	if err = c.Bind(u); err != nil {
-		errorResponse(c, http.StatusBadRequest, "bad request")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "bad request"}).SetInternal(err)
 	}
 
 	if len(u.Password) < 10 && len(u.Password) > 0 {
-		errorResponse(c, http.StatusBadRequest, "bad request")
+		err := errors.New("bad request")
 		r.l.Error(ctx, fmt.Sprintf("%s: invalid password", op))
-		return fmt.Errorf("%s: %w", op, errors.New("bad request"))
+		return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"error": "bad request"}).SetInternal(err)
 	}
 
 	user, err := r.t.UpdateUserInfo(ctx, userId, u.Email, u.Password, u.Name, u.Surname, u.Username, u.City)
 	if err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal error")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, echo.Map{"error": "internal error"}).SetInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, entity.UpdateUserResponse{
@@ -181,27 +161,23 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	// достаём access token
 	token := jwtPkg.ExtractToken(c)
 	if token == "" {
-		errorResponse(c, http.StatusBadRequest, "bad request")
+		err := errors.New("token is required")
 		r.l.Error(ctx, fmt.Sprintf("%s: token is required", op))
-		return fmt.Errorf("%s: %s", op, "token is required")
+		return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "token is required"}).SetInternal(err)
 	}
 
-	// валидируем токен и достаём id пользователя
 	userId, err := jwtPkg.ValidateTokenAndGetUserId(token)
 	if err != nil {
-		errorResponse(c, http.StatusUnauthorized, "bad request")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %s", op, err)
+		return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "wrong token"}).SetInternal(err)
 	}
 
 	isSucceed, err := r.t.DeleteAccount(ctx, userId)
 	if err != nil {
-		errorResponse(c, http.StatusInternalServerError, "internal error")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, echo.Map{"error": "internal error"}).SetInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, entity.DeleteUserResponse{
@@ -212,16 +188,16 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 func (r *containerRoutes) RefreshToken(c echo.Context) error {
 	const op = "controller.RefreshToken"
 
-	refreshTokenOld := jwtPkg.ExtractToken(c)
 	ctx := c.Request().Context()
+	refreshTokenOld := jwtPkg.ExtractToken(c)
 
 	accessToken, refreshToken, err := r.t.RefreshToken(ctx, refreshTokenOld)
 	if err != nil {
-		errorResponse(c, http.StatusUnauthorized, "token error")
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
-		return fmt.Errorf("%s: %w", op, err)
+		return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{"error": "token error"}).SetInternal(err)
 	}
 
+	// TODO устанавливать стразу в куки
 	return c.JSON(http.StatusOK, entity.RefreshTokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
