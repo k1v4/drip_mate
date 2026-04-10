@@ -8,7 +8,7 @@ import (
 
 // IHandler интерфейс для чтения сообщения из кафки
 type IHandler interface {
-	Handle(ctx context.Context, msg entity.Message) error
+	Handle(ctx context.Context, msg *entity.Message) error
 }
 
 type IUseCase interface {

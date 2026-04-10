@@ -3,6 +3,7 @@ module github.com/k1v4/drip_mate
 go 1.26.1
 
 require (
+	github.com/AlekSi/pointer v1.2.0
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.14.1
 	github.com/golang-jwt/jwt/v5 v5.3.1

@@ -23,7 +23,7 @@ func (_m *IHandler) EXPECT() *IHandler_Expecter {
 }
 
 // Handle provides a mock function with given fields: ctx, msg
-func (_m *IHandler) Handle(ctx context.Context, msg entity.Message) error {
+func (_m *IHandler) Handle(ctx context.Context, msg *entity.Message) error {
 	ret := _m.Called(ctx, msg)
 
 	if len(ret) == 0 {
@@ -31,7 +31,7 @@ func (_m *IHandler) Handle(ctx context.Context, msg entity.Message) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, entity.Message) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.Message) error); ok {
 		r0 = rf(ctx, msg)
 	} else {
 		r0 = ret.Error(0)
@@ -47,14 +47,14 @@ type IHandler_Handle_Call struct {
 
 // Handle is a helper method to define mock.On call
 //   - ctx context.Context
-//   - msg entity.Message
+//   - msg *entity.Message
 func (_e *IHandler_Expecter) Handle(ctx interface{}, msg interface{}) *IHandler_Handle_Call {
 	return &IHandler_Handle_Call{Call: _e.mock.On("Handle", ctx, msg)}
 }
 
-func (_c *IHandler_Handle_Call) Run(run func(ctx context.Context, msg entity.Message)) *IHandler_Handle_Call {
+func (_c *IHandler_Handle_Call) Run(run func(ctx context.Context, msg *entity.Message)) *IHandler_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(entity.Message))
+		run(args[0].(context.Context), args[1].(*entity.Message))
 	})
 	return _c
 }
@@ -64,7 +64,7 @@ func (_c *IHandler_Handle_Call) Return(_a0 error) *IHandler_Handle_Call {
 	return _c
 }
 
-func (_c *IHandler_Handle_Call) RunAndReturn(run func(context.Context, entity.Message) error) *IHandler_Handle_Call {
+func (_c *IHandler_Handle_Call) RunAndReturn(run func(context.Context, *entity.Message) error) *IHandler_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }

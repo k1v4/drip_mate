@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/AlekSi/pointer"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/logger"
@@ -43,9 +44,9 @@ func (c *Consumer) Run(ctx context.Context) error {
 			return err
 		}
 
-		mappedMsg := mapMessage(msg)
+		mappedMsg := mapMessage(pointer.To(msg))
 
-		if getRetryCount(mappedMsg) > 5 {
+		if getRetryCount(pointer.To(mappedMsg)) > 5 {
 			c.l.Error(
 				ctx,
 				"retry limit exceeded, skipping message",
@@ -55,14 +56,15 @@ func (c *Consumer) Run(ctx context.Context) error {
 			)
 
 			// принудительно коммитим offset
-			if err = c.reader.CommitMessages(ctx, msg); err != nil {
+			if err := c.reader.CommitMessages(ctx, msg); err != nil {
 				return err
 			}
 
 			continue
 		}
 
-		err = c.handler.Handle(ctx, mappedMsg)
+		//nolint
+		err = c.handler.Handle(ctx, pointer.To(mappedMsg))
 		if err != nil {
 			// логируем и НЕ коммитим offset
 			// сообщение будет перечитано
@@ -77,17 +79,17 @@ func (c *Consumer) Run(ctx context.Context) error {
 			continue
 		}
 
-		if err = c.reader.CommitMessages(ctx, msg); err != nil {
+		if err := c.reader.CommitMessages(ctx, msg); err != nil {
 			return err
 		}
 	}
 }
 
-func mapMessage(message kafka.Message) entity.Message {
+func mapMessage(message *kafka.Message) entity.Message {
 	return entity.Message{}
 }
 
-func getRetryCount(msg entity.Message) int {
+func getRetryCount(msg *entity.Message) int {
 	if v, ok := msg.Headers[RetryHeader]; ok {
 		n, _ := strconv.Atoi(string(v))
 		return n

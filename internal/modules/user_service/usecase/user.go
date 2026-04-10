@@ -55,12 +55,12 @@ func (s *AuthUseCase) Login(ctx context.Context, email string, password string) 
 		return 0, "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	tokenAccess, err := jwtpkg.NewAccessToken(user, s.AccessTokenTTL)
+	tokenAccess, err := jwtpkg.NewAccessToken(&user, s.AccessTokenTTL)
 	if err != nil {
 		return 0, "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	tokenRefresh, err := jwtpkg.NewAccessToken(user, s.RefreshTokenTTL)
+	tokenRefresh, err := jwtpkg.NewAccessToken(&user, s.RefreshTokenTTL)
 	if err != nil {
 		return 0, "", "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -117,7 +117,7 @@ func (s *AuthUseCase) UpdateUserInfo(
 		return entity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	userID, err := s.repo.UpdateUser(ctx, entity.User{
+	userID, err := s.repo.UpdateUser(ctx, &entity.User{
 		ID:       id,
 		Email:    email,
 		Password: passHash,
