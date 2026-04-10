@@ -10,7 +10,6 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/joho/godotenv v1.5.1
 	github.com/k1v4/protos v0.0.24
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/minio/minio-go/v7 v7.0.100
@@ -44,6 +43,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/jackc/puddle v1.3.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.11 // indirect
