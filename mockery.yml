@@ -1,0 +1,26 @@
+quiet: False
+log-level: error
+disable-version-string: True
+with-expecter: True
+dir: mocks/{{replaceAll (replaceAll .InterfaceDirRelative "internal" "internal_") "vendor/" ""}}
+mockname: "{{ .InterfaceName | camelcase }}"
+outpkg: mocks
+disable-func-mocks: True
+
+packages:
+  "github.com/k1v4/drip_mate/internal/modules/":
+    config:
+      all: true
+      exclude: [
+        "mocks",
+        "pkg/tests",
+      ]
+      recursive: true
+  "github.com/k1v4/drip_mate/pkg":
+    config:
+      all: true
+      exclude: [
+        "mocks",
+        "pkg/tests",
+      ]
+      recursive: true

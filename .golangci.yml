@@ -1,0 +1,41 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - gocritic
+    - gocyclo
+    - goconst
+    - unconvert
+    - unparam
+    - unused
+    - nakedret
+    - prealloc
+    - bodyclose
+    - noctx
+    - misspell
+    - exhaustive
+
+formatters:
+  enable:
+    - goimports
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gocritic:
+    enabled-tags:
+      - performance
+      - diagnostic
+  exhaustive:
+    default-signifies-exhaustive: true
+
+exclusions:
+  rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
