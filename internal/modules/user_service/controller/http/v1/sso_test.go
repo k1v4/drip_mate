@@ -333,7 +333,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 
 			if tc.needToken {
 				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
-				token, _ := jwtpkg.NewAccessToken(user, 15*time.Minute)
+				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute)
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
 
@@ -422,7 +422,7 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 
 			if tc.needToken {
 				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
-				token, _ := jwtpkg.NewAccessToken(user, 15*time.Minute)
+				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute)
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
 

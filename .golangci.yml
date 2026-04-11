@@ -19,23 +19,23 @@ linters:
     - misspell
     - exhaustive
 
+  settings:
+    gocyclo:
+      min-complexity: 15
+    gocritic:
+      enabled-tags:
+        - performance
+        - diagnostic
+    exhaustive:
+      default-signifies-exhaustive: true
+
+  exclusions:
+    rules:
+      - path: (.+)_test\.go
+        linters:
+          - gosec
+          - errcheck
+
 formatters:
   enable:
     - goimports
-
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-  gocritic:
-    enabled-tags:
-      - performance
-      - diagnostic
-  exhaustive:
-    default-signifies-exhaustive: true
-
-exclusions:
-  rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck

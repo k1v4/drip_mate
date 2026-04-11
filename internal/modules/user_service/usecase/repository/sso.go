@@ -235,7 +235,7 @@ func (a *AuthRepository) DeleteUser(ctx context.Context, id string) error {
 	return nil
 }
 
-func (a *AuthRepository) UpdateUser(ctx context.Context, newUser entity.User) (string, error) {
+func (a *AuthRepository) UpdateUser(ctx context.Context, newUser *entity.User) (string, error) {
 	const op = "repository.UpdateUser"
 
 	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
@@ -299,7 +299,7 @@ func withTx(
 		_ = tx.Rollback(ctx) // безопасно, если Commit уже был
 	}()
 
-	if err = fn(tx); err != nil {
+	if err := fn(tx); err != nil {
 		return err
 	}
 

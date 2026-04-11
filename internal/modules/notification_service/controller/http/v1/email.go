@@ -19,7 +19,7 @@ func NewEmailController(useCase usecase.IUseCase) *EmailController {
 	}
 }
 
-func (c *EmailController) Handle(ctx context.Context, msg entity.Message) error {
+func (c *EmailController) Handle(ctx context.Context, msg *entity.Message) error {
 	var event entity.NotificationEvent
 	if err := json.Unmarshal(msg.Value, &event); err != nil {
 		return fmt.Errorf("unmarshal event: %w", err)

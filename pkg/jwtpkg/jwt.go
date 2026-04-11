@@ -25,7 +25,7 @@ func ExtractToken(c echo.Context) string {
 	return strings.TrimPrefix(bearerToken, "Bearer ")
 }
 
-func NewAccessToken(user entity.User, duration time.Duration) (string, error) {
+func NewAccessToken(user *entity.User, duration time.Duration) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
@@ -78,7 +78,7 @@ func RefreshAccessToken(refreshToken string, duration time.Duration) (string, er
 	}
 
 	// Создаем новый Access Token
-	newAccessToken, err := NewAccessToken(user, duration)
+	newAccessToken, err := NewAccessToken(&user, duration)
 	if err != nil {
 		return "", fmt.Errorf("ошибка при создании Access Token: %v", err)
 	}

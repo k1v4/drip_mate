@@ -19,7 +19,7 @@ format:
 	$(GOIMPORTS) -w .
 
 lint:
-	$(GOLANGCI_LINT) run --timeout=5m ./... --fix
+	$(GOLANGCI_LINT) run --timeout=5m ./...
 
 test:
 	@echo "Running tests with coverage"

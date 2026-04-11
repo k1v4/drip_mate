@@ -242,7 +242,7 @@ func (_c *ISsoRepository_SaveUser_Call) RunAndReturn(run func(context.Context, s
 }
 
 // UpdateUser provides a mock function with given fields: ctx, newUser
-func (_m *ISsoRepository) UpdateUser(ctx context.Context, newUser entity.User) (string, error) {
+func (_m *ISsoRepository) UpdateUser(ctx context.Context, newUser *entity.User) (string, error) {
 	ret := _m.Called(ctx, newUser)
 
 	if len(ret) == 0 {
@@ -251,16 +251,16 @@ func (_m *ISsoRepository) UpdateUser(ctx context.Context, newUser entity.User) (
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, entity.User) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.User) (string, error)); ok {
 		return rf(ctx, newUser)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, entity.User) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.User) string); ok {
 		r0 = rf(ctx, newUser)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, entity.User) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.User) error); ok {
 		r1 = rf(ctx, newUser)
 	} else {
 		r1 = ret.Error(1)
@@ -276,14 +276,14 @@ type ISsoRepository_UpdateUser_Call struct {
 
 // UpdateUser is a helper method to define mock.On call
 //   - ctx context.Context
-//   - newUser entity.User
+//   - newUser *entity.User
 func (_e *ISsoRepository_Expecter) UpdateUser(ctx interface{}, newUser interface{}) *ISsoRepository_UpdateUser_Call {
 	return &ISsoRepository_UpdateUser_Call{Call: _e.mock.On("UpdateUser", ctx, newUser)}
 }
 
-func (_c *ISsoRepository_UpdateUser_Call) Run(run func(ctx context.Context, newUser entity.User)) *ISsoRepository_UpdateUser_Call {
+func (_c *ISsoRepository_UpdateUser_Call) Run(run func(ctx context.Context, newUser *entity.User)) *ISsoRepository_UpdateUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(entity.User))
+		run(args[0].(context.Context), args[1].(*entity.User))
 	})
 	return _c
 }
@@ -293,7 +293,7 @@ func (_c *ISsoRepository_UpdateUser_Call) Return(_a0 string, _a1 error) *ISsoRep
 	return _c
 }
 
-func (_c *ISsoRepository_UpdateUser_Call) RunAndReturn(run func(context.Context, entity.User) (string, error)) *ISsoRepository_UpdateUser_Call {
+func (_c *ISsoRepository_UpdateUser_Call) RunAndReturn(run func(context.Context, *entity.User) (string, error)) *ISsoRepository_UpdateUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -379,7 +379,7 @@ func TestAuthUseCase_RefreshToken(t *testing.T) {
 			useCase := NewAuthUseCase(nil, 15*time.Minute, 7*24*time.Hour)
 
 			if tc.refreshToken == "" {
-				tc.refreshToken, _ = jwtpkg.NewAccessToken(user, 1*time.Hour)
+				tc.refreshToken, _ = jwtpkg.NewAccessToken(&user, 1*time.Hour)
 			}
 
 			access, refresh, err := useCase.RefreshToken(ctx, tc.refreshToken)
