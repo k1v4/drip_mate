@@ -21,17 +21,17 @@ func (_m *IUseCase) EXPECT() *IUseCase_Expecter {
 	return &IUseCase_Expecter{mock: &_m.Mock}
 }
 
-// SendEmailNotification provides a mock function with given fields: ctx, text, email
-func (_m *IUseCase) SendEmailNotification(ctx context.Context, text string, email string) error {
-	ret := _m.Called(ctx, text, email)
+// SendEmailNotification provides a mock function with given fields: ctx, email
+func (_m *IUseCase) SendEmailNotification(ctx context.Context, email string) error {
+	ret := _m.Called(ctx, email)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendEmailNotification")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, text, email)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, email)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -46,15 +46,14 @@ type IUseCase_SendEmailNotification_Call struct {
 
 // SendEmailNotification is a helper method to define mock.On call
 //   - ctx context.Context
-//   - text string
 //   - email string
-func (_e *IUseCase_Expecter) SendEmailNotification(ctx interface{}, text interface{}, email interface{}) *IUseCase_SendEmailNotification_Call {
-	return &IUseCase_SendEmailNotification_Call{Call: _e.mock.On("SendEmailNotification", ctx, text, email)}
+func (_e *IUseCase_Expecter) SendEmailNotification(ctx interface{}, email interface{}) *IUseCase_SendEmailNotification_Call {
+	return &IUseCase_SendEmailNotification_Call{Call: _e.mock.On("SendEmailNotification", ctx, email)}
 }
 
-func (_c *IUseCase_SendEmailNotification_Call) Run(run func(ctx context.Context, text string, email string)) *IUseCase_SendEmailNotification_Call {
+func (_c *IUseCase_SendEmailNotification_Call) Run(run func(ctx context.Context, email string)) *IUseCase_SendEmailNotification_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -64,7 +63,7 @@ func (_c *IUseCase_SendEmailNotification_Call) Return(_a0 error) *IUseCase_SendE
 	return _c
 }
 
-func (_c *IUseCase_SendEmailNotification_Call) RunAndReturn(run func(context.Context, string, string) error) *IUseCase_SendEmailNotification_Call {
+func (_c *IUseCase_SendEmailNotification_Call) RunAndReturn(run func(context.Context, string) error) *IUseCase_SendEmailNotification_Call {
 	_c.Call.Return(run)
 	return _c
 }

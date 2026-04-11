@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Добро пожаловать в drip mate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@400;500&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #f4f1ec;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #1a1a2e;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: 40px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 24px rgba(26,26,46,0.08);
+        }
+
+        /* HEADER */
+        .header {
+            background-color: #1a1a2e;
+            padding: 48px 40px 36px;
+            text-align: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 34px;
+            font-weight: 400;
+            color: #f0e6d3;
+            letter-spacing: 4px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .tagline {
+            font-size: 11px;
+            color: #8a7f72;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        /* HERO ILLUSTRATION */
+        .hero {
+            background-color: #f0e6d3;
+            text-align: center;
+            line-height: 0;
+        }
+
+        /* BODY */
+        .body {
+            background-color: #ffffff;
+            padding: 44px 44px 36px;
+        }
+
+        .greeting {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 28px;
+            font-weight: 400;
+            color: #1a1a2e;
+            margin-bottom: 18px;
+            line-height: 1.3;
+        }
+
+        .body-text {
+            font-size: 15px;
+            color: #5a5a6e;
+            line-height: 1.85;
+            margin-bottom: 32px;
+        }
+
+        /* FEATURES */
+        .features {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 12px 0;
+            margin: 0 -12px 32px;
+        }
+
+        .feature {
+            display: table-cell;
+            width: 33.33%;
+            background-color: #f7f4f0;
+            border-radius: 8px;
+            padding: 20px 14px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .feature-icon {
+            font-size: 20px;
+            display: block;
+            margin-bottom: 10px;
+            color: #8a7f72;
+        }
+
+        .feature-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: #8a7f72;
+            line-height: 1.55;
+        }
+
+        /* CTA */
+        .cta-wrap {
+            text-align: center;
+            margin: 36px 0 16px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background-color: #1a1a2e;
+            color: #f0e6d3 !important;
+            font-family: 'Inter', Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 15px 44px;
+            border-radius: 2px;
+        }
+
+        /* DIVIDER */
+        .divider {
+            border: none;
+            border-top: 1px solid #ede8e0;
+            margin: 36px 0;
+        }
+
+        /* QUOTE */
+        .quote {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 17px;
+            font-style: italic;
+            color: #8a7f72;
+            text-align: center;
+            line-height: 1.65;
+            padding: 0 20px;
+        }
+
+        /* FOOTER */
+        .footer {
+            background-color: #f7f4f0;
+            padding: 28px 44px;
+            text-align: center;
+            border-top: 1px solid #ede8e0;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #8a7f72;
+            line-height: 1.8;
+        }
+
+        .footer-link {
+            color: #8a7f72;
+            text-decoration: underline;
+        }
+
+        /* RESPONSIVE */
+        @media only screen and (max-width: 480px) {
+            .wrapper { margin: 0; border-radius: 0; }
+            .body { padding: 32px 24px 28px; }
+            .header { padding: 36px 24px 28px; }
+            .footer { padding: 24px; }
+            .features { display: block; }
+            .feature { display: block; width: 100%; margin-bottom: 10px; }
+            .greeting { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- HEADER -->
+    <div class="header">
+        <span class="logo">drip mate</span>
+        <span class="tagline">your personal style companion</span>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+        <svg width="600" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="600" height="200" fill="#f0e6d3"/>
+
+            <!-- figure left -->
+            <ellipse cx="130" cy="60" rx="22" ry="22" fill="#d4b896"/>
+            <rect x="108" y="80" width="44" height="60" rx="3" fill="#c4a882" opacity="0.6"/>
+            <rect x="108" y="80" width="20" height="60" rx="3" fill="#1a1a2e" opacity="0.08"/>
+            <rect x="116" y="140" width="14" height="46" rx="2" fill="#1a1a2e" opacity="0.12"/>
+            <rect x="132" y="140" width="14" height="46" rx="2" fill="#c4a882" opacity="0.5"/>
+
+            <!-- figure center -->
+            <ellipse cx="300" cy="52" rx="26" ry="26" fill="#c8a87a"/>
+            <rect x="272" y="76" width="56" height="72" rx="3" fill="#1a1a2e" opacity="0.14"/>
+            <rect x="272" y="76" width="26" height="72" rx="3" fill="#1a1a2e" opacity="0.07"/>
+            <rect x="280" y="148" width="18" height="44" rx="2" fill="#1a1a2e" opacity="0.18"/>
+            <rect x="300" y="148" width="18" height="44" rx="2" fill="#8a7f72" opacity="0.3"/>
+
+            <!-- figure right -->
+            <ellipse cx="470" cy="60" rx="22" ry="22" fill="#b89070"/>
+            <rect x="448" y="80" width="44" height="60" rx="3" fill="#8a7f72" opacity="0.45"/>
+            <rect x="448" y="80" width="20" height="60" rx="3" fill="#1a1a2e" opacity="0.07"/>
+            <rect x="456" y="140" width="14" height="46" rx="2" fill="#8a7f72" opacity="0.4"/>
+            <rect x="472" y="140" width="14" height="46" rx="2" fill="#1a1a2e" opacity="0.1"/>
+
+            <!-- decorative lines -->
+            <line x1="60" y1="100" x2="60" y2="190" stroke="#c4a882" stroke-width="0.5" opacity="0.4"/>
+            <line x1="540" y1="100" x2="540" y2="190" stroke="#c4a882" stroke-width="0.5" opacity="0.4"/>
+
+            <!-- bottom text -->
+            <text x="300" y="193" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#a89880" letter-spacing="4">style is self-expression</text>
+        </svg>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+        <p class="greeting">Добро пожаловать в drip mate</p>
+        <p class="body-text">
+            Мы рады приветствовать вас. Теперь каждое утро начнётся с уверенности —
+            drip mate подберёт образы, которые подходят именно вам: вашим параметрам,
+            стилю жизни и настроению. Никакого лишнего шума, только то, что создано для вас.
+        </p>
+
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">✦</span>
+                <p class="feature-title">Персональный подбор</p>
+                <p class="feature-desc">Образы на основе ваших индивидуальных параметров и предпочтений</p>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">◈</span>
+                <p class="feature-title">Умные рекомендации</p>
+                <p class="feature-desc">Алгоритм учится вашему стилю с каждым новым выбором</p>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">◎</span>
+                <p class="feature-title">Ваш гардероб</p>
+                <p class="feature-desc">Сохраняйте образы и создавайте персональные коллекции</p>
+            </div>
+        </div>
+
+        <div class="cta-wrap">
+            <a href="{{.AppURL}}" class="cta-btn">Начать подбор</a>
+        </div>
+
+        <hr class="divider">
+
+        <p class="quote">
+            «Мода приходит и уходит — стиль остаётся навсегда»
+        </p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p class="footer-text">
+            Вы получили это письмо, потому что зарегистрировались на drip mate.<br>
+            <a href="{{.UnsubscribeURL}}" class="footer-link">Отписаться</a>
+            &nbsp;·&nbsp;
+            <a href="{{.PrivacyURL}}" class="footer-link">Политика конфиденциальности</a>
+            <br><br>
+            © 2026 drip mate. Все права защищены.
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

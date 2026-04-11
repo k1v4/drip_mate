@@ -30,11 +30,26 @@ type Token struct {
 	RefreshTTL time.Duration `yaml:"refresh_ttl" env:"REFRESH_TOKEN_TTL" env-default:"24h"`
 }
 
+type Kafka struct {
+	Brokers string `yaml:"brokers" env:"KAFKA_BROKERS" env-required:"true"`
+	Topic   string `yaml:"topic"   env:"KAFKA_TOPIC"   env-required:"true"`
+	GroupID string `yaml:"group_id" env:"KAFKA_GROUP_ID" env-default:"drip-mate"`
+}
+
+type SMTP struct {
+	Host     string `yaml:"host"     env:"SMTP_HOST"     env-required:"true"`
+	Port     int    `yaml:"port"     env:"SMTP_PORT"     env-default:"465"`
+	Username string `yaml:"username" env:"SMTP_USERNAME" env-required:"true"`
+	Password string `yaml:"password" env:"SMTP_PASSWORD" env-required:"true"`
+}
+
 type Config struct {
 	Server        Server        `yaml:"server"`
 	DB            DB            `yaml:"db"`
 	Token         Token         `yaml:"token"`
 	ObjectStorage ObjectStorage `yaml:"object_storage"`
+	Kafka         Kafka         `yaml:"kafka"`
+	SMTP          SMTP          `yaml:"smtp"`
 }
 
 func MustLoadConfig() *Config {
