@@ -3,6 +3,7 @@ package kafkaPkg
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
@@ -44,6 +45,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 		}
 
 		mappedMsg := mapMessage(&msg)
+		c.l.Info(ctx, fmt.Sprintf("Message received: %v", mappedMsg))
 
 		if getRetryCount(new(mappedMsg)) > 5 {
 			c.l.Error(

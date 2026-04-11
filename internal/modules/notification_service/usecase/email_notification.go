@@ -20,7 +20,6 @@ func NewEmailNotificationUseCase(emailAdapter EmailClient) *EmailNotificationUse
 
 func (en *EmailNotificationUseCase) SendEmailNotification(ctx context.Context, text string, email string) error {
 	emailInfo := &entity.Email{
-		From:    "myanymail@mail.ru",
 		To:      []string{email},
 		Subject: "Welcome letter!",
 		HTML:    text,

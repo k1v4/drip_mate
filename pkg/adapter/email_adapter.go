@@ -1,38 +1,30 @@
 package adapter
 
 import (
+	"crypto/tls"
 	"fmt"
-	"os"
 
+	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
-
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"gopkg.in/gomail.v2"
 )
 
-// SendGridClient реализация EmailClient для SendGrid API.
-type SendGridClient struct {
-	client *sendgrid.Client
+type GoMailClient struct {
+	dialer *gomail.Dialer
+	from   string
 }
 
-// NewSendGridClient создаёт нового клиента.
-// apiKey можно передать явно или через переменную окружения SENDGRID_API_KEY.
-func NewSendGridClient(apiKey string) *SendGridClient {
-	if apiKey == "" {
-		apiKey = os.Getenv("SENDGRID_API_KEY")
-	}
+func NewGoMailClient(cfg config.SMTP) *GoMailClient {
+	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.Username, cfg.Password)
+	dialer.TLSConfig = &tls.Config{ServerName: cfg.Host}
 
-	if apiKey == "" {
-		return nil
-	}
-
-	return &SendGridClient{
-		client: sendgrid.NewSendClient(apiKey),
+	return &GoMailClient{
+		dialer: dialer,
+		from:   cfg.Username,
 	}
 }
 
-// Send отправляет письмо через SendGrid.
-func (s *SendGridClient) Send(email *entity.Email) (*entity.SendResult, error) {
+func (g *GoMailClient) Send(email *entity.Email) (*entity.SendResult, error) {
 	if email == nil {
 		return nil, fmt.Errorf("email information is nil")
 	}
@@ -40,33 +32,22 @@ func (s *SendGridClient) Send(email *entity.Email) (*entity.SendResult, error) {
 		return nil, fmt.Errorf("no recipient specified")
 	}
 
-	from := mail.NewEmail("", email.From)
-	message := mail.NewV3Mail()
-	message.SetFrom(from)
-	message.Subject = email.Subject
+	m := gomail.NewMessage()
+	m.SetHeader("From", g.from)
+	m.SetHeader("To", email.To...)
+	m.SetHeader("Subject", email.Subject)
 
-	personalization := mail.NewPersonalization()
-	for _, toAddr := range email.To {
-		to := mail.NewEmail("", toAddr)
-		personalization.AddTos(to)
-	}
-	message.AddPersonalizations(personalization)
-
-	if email.Text != "" {
-		message.AddContent(mail.NewContent("text/plain", email.Text))
-	}
 	if email.HTML != "" {
-		message.AddContent(mail.NewContent("text/html", email.HTML))
+		m.SetBody("text/html", email.HTML)
+	} else if email.Text != "" {
+		m.SetBody("text/plain", email.Text)
 	}
 
-	resp, err := s.client.Send(message)
-	if err != nil {
-		return nil, fmt.Errorf("sendgrid send error: %w", err)
+	if err := g.dialer.DialAndSend(m); err != nil {
+		return nil, fmt.Errorf("smtp send error: %w", err)
 	}
 
 	return &entity.SendResult{
-		StatusCode: resp.StatusCode,
-		Body:       resp.Body,
-		Headers:    resp.Headers,
+		StatusCode: 200,
 	}, nil
 }

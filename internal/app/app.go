@@ -78,8 +78,7 @@ func Run() {
 	}
 	serviceLogger.Info(ctx, "minio client created successfully")
 
-	// TODO из конфига
-	email := adapter.NewSendGridClient("")
+	email := adapter.NewGoMailClient(cfg.SMTP)
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
