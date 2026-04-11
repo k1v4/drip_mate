@@ -29,14 +29,13 @@ linters:
     exhaustive:
       default-signifies-exhaustive: true
 
-formatters:
-  enable:
-    - goimports
-
-issues:
   exclusions:
     rules:
-      - path: _test\.go
+      - path: (.+)_test\.go
         linters:
           - gosec
           - errcheck
+
+formatters:
+  enable:
+    - goimports
