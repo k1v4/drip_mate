@@ -12,7 +12,7 @@ type IHandler interface {
 }
 
 type IUseCase interface {
-	SendEmailNotification(ctx context.Context, text string, email string) error
+	SendEmailNotification(ctx context.Context, email string) error
 }
 
 // EmailClient интерфейс для отправки email

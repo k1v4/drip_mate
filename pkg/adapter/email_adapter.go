@@ -3,6 +3,7 @@ package adapter
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
 
 	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
@@ -48,6 +49,6 @@ func (g *GoMailClient) Send(email *entity.Email) (*entity.SendResult, error) {
 	}
 
 	return &entity.SendResult{
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 	}, nil
 }

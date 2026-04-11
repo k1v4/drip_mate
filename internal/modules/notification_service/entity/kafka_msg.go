@@ -11,5 +11,4 @@ type Message struct {
 
 type NotificationEvent struct {
 	Email string `json:"email"`
-	Text  string `json:"text"`
 }

@@ -25,15 +25,11 @@ func (c *EmailController) Handle(ctx context.Context, msg *entity.Message) error
 		return fmt.Errorf("unmarshal event: %w", err)
 	}
 
-	if event.Text == "" {
-		return fmt.Errorf("empty text")
-	}
-
 	if event.Email == "" {
 		return fmt.Errorf("empty email")
 	}
 
-	err := c.useCase.SendEmailNotification(ctx, event.Text, event.Email)
+	err := c.useCase.SendEmailNotification(ctx, event.Email)
 	if err != nil {
 		return fmt.Errorf("failed to send email notification: %w", err)
 	}

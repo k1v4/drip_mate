@@ -13,7 +13,6 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -22,6 +21,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/k1v4/drip_mate/internal/config"
+	"github.com/k1v4/drip_mate/internal/modules/notification_service"
 	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
 	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
@@ -33,6 +33,7 @@ import (
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
 	"github.com/k1v4/drip_mate/pkg/adapter"
 	"github.com/k1v4/drip_mate/pkg/httpserver"
+	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/k1v4/drip_mate/pkg/logger"
 )
 
@@ -78,6 +79,12 @@ func Run() {
 	}
 	serviceLogger.Info(ctx, "minio client created successfully")
 
+	templates, err := notification_service.NewTemplates()
+	if err != nil {
+		serviceLogger.Error(ctx, fmt.Sprintf("parse templates: %v", err))
+		return
+	}
+
 	email := adapter.NewGoMailClient(cfg.SMTP)
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
@@ -85,7 +92,7 @@ func Run() {
 
 	authUseCase := serviceUser.NewAuthUseCase(authRepo, cfg.Token.TTL, cfg.Token.RefreshTTL)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
-	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email)
+	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, templates)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
