@@ -7,17 +7,19 @@ import (
 
 	"github.com/k1v4/drip_mate/internal/modules/notification_service"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
-	"github.com/labstack/gommon/log"
+	"github.com/k1v4/drip_mate/pkg/logger"
 )
 
 type EmailNotificationUseCase struct {
 	emailAdapter EmailClient
+	logger       logger.Logger
 	welcomeTmpl  *notification_service.Templates
 }
 
-func NewEmailNotificationUseCase(emailAdapter EmailClient, welcomeTmpl *notification_service.Templates) *EmailNotificationUseCase {
+func NewEmailNotificationUseCase(emailAdapter EmailClient, logger logger.Logger, welcomeTmpl *notification_service.Templates) *EmailNotificationUseCase {
 	return &EmailNotificationUseCase{
 		emailAdapter: emailAdapter,
+		logger:       logger,
 		welcomeTmpl:  welcomeTmpl,
 	}
 }
@@ -27,8 +29,7 @@ func (en *EmailNotificationUseCase) SendEmailNotification(ctx context.Context, e
 
 	welcomeMsg, err := en.welcomeTmpl.RenderWelcome("google.com")
 	if err != nil {
-		// TODO прокинуть общий логгер
-		log.Errorf("failed to render welcome template: %v", err)
+		en.logger.Error(ctx, fmt.Sprintf("failed to render welcome template: %v", err))
 		plainText = "Добро пожаловать в drip mate! Мы рады видеть вас."
 	} else {
 		html = welcomeMsg

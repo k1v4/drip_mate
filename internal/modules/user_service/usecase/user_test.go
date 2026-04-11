@@ -86,7 +86,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := new(mocks.ISsoRepository)
-			authUC := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			authUC := NewAuthUseCase(mockRepo, nil, nil, 15*time.Minute, 7*24*time.Hour)
 
 			mockRepo.On("GetUser", ctx, tc.email).Return(tc.mockUser, tc.mockError)
 
@@ -163,7 +163,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, 15*time.Minute, 7*24*time.Hour)
 
 			mockRepo.EXPECT().SaveUser(ctx, tc.email, mock.Anything).Return(tc.id, tc.mockError).Once()
 
@@ -216,7 +216,7 @@ func TestAuthUseCase_DeleteAccount(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, 15*time.Minute, 7*24*time.Hour)
 
 			mockRepo.
 				EXPECT().
@@ -307,7 +307,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, 15*time.Minute, 7*24*time.Hour)
 
 			mockRepo.
 				EXPECT().
@@ -376,7 +376,7 @@ func TestAuthUseCase_RefreshToken(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			useCase := NewAuthUseCase(nil, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(nil, nil, nil, 15*time.Minute, 7*24*time.Hour)
 
 			if tc.refreshToken == "" {
 				tc.refreshToken, _ = jwtpkg.NewAccessToken(&user, 1*time.Hour)

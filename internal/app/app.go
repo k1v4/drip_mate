@@ -58,15 +58,12 @@ func Run() {
 	defer pg.Close()
 	serviceLogger.Info(ctx, "connected to database successfully")
 
-	m, err := migrate.New("file://migrations", cfg.DB.URL)
+	err = makeMigrate(cfg.DB.URL)
 	if err != nil {
-		serviceLogger.Error(ctx, fmt.Sprintf("migration setup failed: %v", err))
+		serviceLogger.Error(ctx, fmt.Sprintf("migrate: %s", err))
 		return
 	}
-	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		serviceLogger.Error(ctx, fmt.Sprintf("migration failed: %v", err))
-		return
-	}
+
 	serviceLogger.Info(ctx, "migrations applied successfully")
 
 	minioClient, err := minio.New(cfg.ObjectStorage.EndPoint, &minio.Options{
@@ -85,14 +82,26 @@ func Run() {
 		return
 	}
 
+	kafkaProducer := kafkaPkg.NewProducer([]string{cfg.Kafka.Brokers}, cfg.Kafka.Topic)
+	if kafkaProducer == nil {
+		serviceLogger.Error(ctx, fmt.Sprintf("create kafka producer error: %v", err))
+		return
+	}
+	defer func() {
+		err := kafkaProducer.Close()
+		if err != nil {
+			serviceLogger.Error(ctx, fmt.Sprintf("close kafka producer error: %v", err))
+		}
+	}()
+
 	email := adapter.NewGoMailClient(cfg.SMTP)
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
 
-	authUseCase := serviceUser.NewAuthUseCase(authRepo, cfg.Token.TTL, cfg.Token.RefreshTTL)
+	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, cfg.Token.TTL, cfg.Token.RefreshTTL)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
-	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, templates)
+	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
@@ -115,7 +124,11 @@ func Run() {
 	})
 
 	// создаём consumer
-	kafkaConsumer := kafkaPkg.NewConsumer(kafkaReader, notifController, serviceLogger)
+	kafkaConsumer := kafkaPkg.NewConsumer(kafkaReader, notifController, kafkaProducer, serviceLogger)
+	if kafkaConsumer == nil {
+		serviceLogger.Error(ctx, fmt.Sprintf("create kafka consumer error: %v", err))
+		return
+	}
 
 	// Запускаем оба сервера параллельно через errgroup
 	eg, egCtx := errgroup.WithContext(ctx)
@@ -158,6 +171,18 @@ func Run() {
 	}
 
 	serviceLogger.Info(ctx, "server stopped gracefully")
+}
+
+func makeMigrate(url string) error {
+	m, err := migrate.New("file://migrations", url)
+	if err != nil {
+		return fmt.Errorf("migration setup failed: %v", err)
+	}
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("migration failed: %v", err)
+	}
+
+	return nil
 }
 
 func makeHTTPErrorHandler(l logger.Logger) echo.HTTPErrorHandler {

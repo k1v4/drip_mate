@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
+	"github.com/k1v4/drip_mate/internal/entity"
+	userEntity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"
+	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
+	"github.com/k1v4/drip_mate/pkg/logger"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,13 +24,17 @@ var (
 
 type AuthUseCase struct {
 	repo            ISsoRepository
+	logger          logger.Logger
+	kafkaProducer   *kafkaPkg.Producer
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
 }
 
-func NewAuthUseCase(repo ISsoRepository, accessTokenTTL, refreshTokenTTL time.Duration) *AuthUseCase {
+func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer, accessTokenTTL, refreshTokenTTL time.Duration) *AuthUseCase {
 	return &AuthUseCase{
 		repo:            repo,
+		logger:          logger,
+		kafkaProducer:   kafkaProducer,
 		AccessTokenTTL:  accessTokenTTL,
 		RefreshTokenTTL: refreshTokenTTL,
 	}
@@ -87,6 +94,13 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password string) (str
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
+	err = s.kafkaProducer.SendNotification(ctx, entity.NotificationEvent{
+		Email: email,
+	})
+	if err != nil {
+		s.logger.Error(ctx, fmt.Sprintf("failed to send register notification to drip_mate: %s", err.Error()))
+	}
+
 	return id, nil
 }
 
@@ -109,15 +123,15 @@ func (s *AuthUseCase) UpdateUserInfo(
 	ctx context.Context,
 	id string,
 	email, password, name, surname, username, city string,
-) (entity.User, error) {
+) (userEntity.User, error) {
 	const op = "service.UpdateUserInfo"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return entity.User{}, fmt.Errorf("%s: %w", op, err)
+		return userEntity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	userID, err := s.repo.UpdateUser(ctx, &entity.User{
+	userID, err := s.repo.UpdateUser(ctx, &userEntity.User{
 		ID:       id,
 		Email:    email,
 		Password: passHash,
@@ -127,12 +141,12 @@ func (s *AuthUseCase) UpdateUserInfo(
 		City:     city,
 	})
 	if err != nil {
-		return entity.User{}, fmt.Errorf("%s: %w", op, err)
+		return userEntity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	user, err := s.repo.GetUserById(ctx, userID)
 	if err != nil {
-		return entity.User{}, fmt.Errorf("%s: %w", op, err)
+		return userEntity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return user, nil
