@@ -7,6 +7,7 @@ config.yaml
 .idea/
 migrations
 postgres_data
+kafka_data
 redis_data
 
 ### Go ###

@@ -1,4 +1,4 @@
-package kafka
+package kafkaPkg
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 			return err
 		}
 
-		mappedMsg := mapMessage(new(msg))
+		mappedMsg := mapMessage(&msg)
 
 		if getRetryCount(new(mappedMsg)) > 5 {
 			c.l.Error(
@@ -62,7 +62,6 @@ func (c *Consumer) Run(ctx context.Context) error {
 			continue
 		}
 
-		//nolint
 		err = c.handler.Handle(ctx, new(mappedMsg))
 		if err != nil {
 			// логируем и НЕ коммитим offset
@@ -85,7 +84,19 @@ func (c *Consumer) Run(ctx context.Context) error {
 }
 
 func mapMessage(message *kafka.Message) entity.Message {
-	return entity.Message{}
+	headers := make(map[string][]byte, len(message.Headers))
+	for _, h := range message.Headers {
+		headers[h.Key] = h.Value
+	}
+
+	return entity.Message{
+		Key:       message.Key,
+		Value:     message.Value,
+		Headers:   headers,
+		Topic:     message.Topic,
+		Partition: message.Partition,
+		Offset:    message.Offset,
+	}
 }
 
 func getRetryCount(msg *entity.Message) int {

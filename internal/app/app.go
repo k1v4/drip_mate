@@ -13,13 +13,17 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/k1v4/drip_mate/internal/config"
+	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
+	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
 	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
 	grpcTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
@@ -27,6 +31,7 @@ import (
 	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
 	"github.com/k1v4/drip_mate/internal/router"
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
+	"github.com/k1v4/drip_mate/pkg/adapter"
 	"github.com/k1v4/drip_mate/pkg/httpserver"
 	"github.com/k1v4/drip_mate/pkg/logger"
 )
@@ -73,11 +78,17 @@ func Run() {
 	}
 	serviceLogger.Info(ctx, "minio client created successfully")
 
+	// TODO из конфига
+	email := adapter.NewSendGridClient("")
+
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
 
 	authUseCase := serviceUser.NewAuthUseCase(authRepo, cfg.Token.TTL, cfg.Token.RefreshTTL)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
+	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email)
+
+	notifController := controllerNotif.NewEmailController(notifUseCase)
 
 	e := echo.New()
 	e.HideBanner = true
@@ -90,9 +101,27 @@ func Run() {
 		serviceLogger.Error(ctx, fmt.Sprintf("create grpc server error: %v", err))
 		return
 	}
+	kafkaReader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:        []string{cfg.Kafka.Brokers},
+		Topic:          cfg.Kafka.Topic,
+		GroupID:        cfg.Kafka.GroupID,
+		CommitInterval: 0,
+	})
+
+	// создаём consumer
+	kafkaConsumer := kafkaPkg.NewConsumer(kafkaReader, notifController, serviceLogger)
 
 	// Запускаем оба сервера параллельно через errgroup
 	eg, egCtx := errgroup.WithContext(ctx)
+
+	// запускаем в errgroup
+	eg.Go(func() error {
+		serviceLogger.Info(ctx, "kafka consumer starting")
+		if err := kafkaConsumer.Run(egCtx); err != nil {
+			return fmt.Errorf("kafka consumer: %w", err)
+		}
+		return nil
+	})
 
 	eg.Go(func() error {
 		serviceLogger.Info(ctx, fmt.Sprintf("http server starting on :%d", cfg.Server.RestPort))

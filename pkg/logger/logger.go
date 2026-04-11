@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 
+	"github.com/labstack/gommon/log"
 	"go.uber.org/zap"
 )
 
@@ -56,7 +57,7 @@ func NewLogger() Logger {
 	defer func() {
 		err = l.Sync()
 		if err != nil {
-			panic(err)
+			log.Error(err)
 		}
 	}()
 

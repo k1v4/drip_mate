@@ -30,11 +30,18 @@ type Token struct {
 	RefreshTTL time.Duration `yaml:"refresh_ttl" env:"REFRESH_TOKEN_TTL" env-default:"24h"`
 }
 
+type Kafka struct {
+	Brokers string `yaml:"brokers" env:"KAFKA_BROKERS" env-required:"true"`
+	Topic   string `yaml:"topic"   env:"KAFKA_TOPIC"   env-required:"true"`
+	GroupID string `yaml:"group_id" env:"KAFKA_GROUP_ID" env-default:"drip-mate"`
+}
+
 type Config struct {
 	Server        Server        `yaml:"server"`
 	DB            DB            `yaml:"db"`
 	Token         Token         `yaml:"token"`
 	ObjectStorage ObjectStorage `yaml:"object_storage"`
+	Kafka         Kafka         `yaml:"kafka"`
 }
 
 func MustLoadConfig() *Config {
