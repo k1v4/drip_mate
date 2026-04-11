@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
+	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/entity"
 	userEntity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
@@ -23,75 +23,76 @@ var (
 )
 
 type AuthUseCase struct {
-	repo            ISsoRepository
-	logger          logger.Logger
-	kafkaProducer   *kafkaPkg.Producer
-	AccessTokenTTL  time.Duration
-	RefreshTokenTTL time.Duration
+	repo          ISsoRepository
+	logger        logger.Logger
+	kafkaProducer *kafkaPkg.Producer
+	cfg           *config.Token
 }
 
-func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer, accessTokenTTL, refreshTokenTTL time.Duration) *AuthUseCase {
+func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer, cfg *config.Token) *AuthUseCase {
 	return &AuthUseCase{
-		repo:            repo,
-		logger:          logger,
-		kafkaProducer:   kafkaProducer,
-		AccessTokenTTL:  accessTokenTTL,
-		RefreshTokenTTL: refreshTokenTTL,
+		repo:          repo,
+		logger:        logger,
+		kafkaProducer: kafkaProducer,
+		cfg:           cfg,
 	}
 }
 
 // Login checks is user already register and sent access-token
 // if user is not exist, Login will return error
-func (s *AuthUseCase) Login(ctx context.Context, email string, password string) (int, string, string, error) {
+func (s *AuthUseCase) Login(ctx context.Context, email string, password string) (int, string, error) {
 	const op = "service.Login"
 
 	user, err := s.repo.GetUser(ctx, email)
 	if err != nil {
 		if errors.Is(err, DataBase.ErrUserNotFound) {
-			return 0, "", "", ErrNoUser
+			return 0, "", ErrNoUser
 		}
 
-		return 0, "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err = bcrypt.CompareHashAndPassword(user.Password, []byte(password)); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return 0, "", "", ErrInvalidCredentials
+			return 0, "", ErrInvalidCredentials
 		}
 
-		return 0, "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	tokenAccess, err := jwtpkg.NewAccessToken(&user, s.AccessTokenTTL)
+	tokenAccess, err := jwtpkg.NewAccessToken(&user, s.cfg.TTL, s.cfg.Secret, s.cfg.Issuer)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	tokenRefresh, err := jwtpkg.NewAccessToken(&user, s.RefreshTokenTTL)
-	if err != nil {
-		return 0, "", "", fmt.Errorf("%s: %w", op, err)
-	}
-
-	return user.AccessLevelId, tokenAccess, tokenRefresh, nil
+	return user.AccessLevelId, tokenAccess, nil
 }
 
 // Register adds new user to app
 // If user with given email already exists, returns error.
-func (s *AuthUseCase) Register(ctx context.Context, email, password string) (string, error) {
+func (s *AuthUseCase) Register(ctx context.Context, email, password string) (string, string, error) {
 	const op = "service.Register"
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	id, err := s.repo.SaveUser(ctx, email, passHash)
+	id, accessID, err := s.repo.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, DataBase.ErrUserExists) {
-			return "", ErrUserExist
+			return "", "", ErrUserExist
 		}
 
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	tokenAccess, err := jwtpkg.NewAccessToken(&userEntity.User{
+		ID:            id,
+		AccessLevelId: accessID,
+	}, s.cfg.TTL, s.cfg.Secret, s.cfg.Issuer)
+	if err != nil {
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	err = s.kafkaProducer.SendNotification(ctx, entity.NotificationEvent{
@@ -101,7 +102,7 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password string) (str
 		s.logger.Error(ctx, fmt.Sprintf("failed to send register notification to drip_mate: %s", err.Error()))
 	}
 
-	return id, nil
+	return id, tokenAccess, nil
 }
 
 func (s *AuthUseCase) DeleteAccount(ctx context.Context, id string) (bool, error) {
@@ -150,15 +151,4 @@ func (s *AuthUseCase) UpdateUserInfo(
 	}
 
 	return user, nil
-}
-
-func (s *AuthUseCase) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
-	const op = "service.RefreshToken"
-
-	newAccessToken, err := jwtpkg.RefreshAccessToken(refreshToken, s.RefreshTokenTTL)
-	if err != nil {
-		return "", "", fmt.Errorf("%s: %w", op, err)
-	}
-
-	return newAccessToken, refreshToken, nil
 }

@@ -80,7 +80,7 @@ func (_c *ISsoService_DeleteAccount_Call) RunAndReturn(run func(context.Context,
 }
 
 // Login provides a mock function with given fields: ctx, email, password
-func (_m *ISsoService) Login(ctx context.Context, email string, password string) (int, string, string, error) {
+func (_m *ISsoService) Login(ctx context.Context, email string, password string) (int, string, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
@@ -89,9 +89,8 @@ func (_m *ISsoService) Login(ctx context.Context, email string, password string)
 
 	var r0 int
 	var r1 string
-	var r2 string
-	var r3 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (int, string, string, error)); ok {
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (int, string, error)); ok {
 		return rf(ctx, email, password)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) int); ok {
@@ -106,19 +105,13 @@ func (_m *ISsoService) Login(ctx context.Context, email string, password string)
 		r1 = ret.Get(1).(string)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, string, string) string); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
 		r2 = rf(ctx, email, password)
 	} else {
-		r2 = ret.Get(2).(string)
+		r2 = ret.Error(2)
 	}
 
-	if rf, ok := ret.Get(3).(func(context.Context, string, string) error); ok {
-		r3 = rf(ctx, email, password)
-	} else {
-		r3 = ret.Error(3)
-	}
-
-	return r0, r1, r2, r3
+	return r0, r1, r2
 }
 
 // ISsoService_Login_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Login'
@@ -141,82 +134,18 @@ func (_c *ISsoService_Login_Call) Run(run func(ctx context.Context, email string
 	return _c
 }
 
-func (_c *ISsoService_Login_Call) Return(_a0 int, _a1 string, _a2 string, _a3 error) *ISsoService_Login_Call {
-	_c.Call.Return(_a0, _a1, _a2, _a3)
-	return _c
-}
-
-func (_c *ISsoService_Login_Call) RunAndReturn(run func(context.Context, string, string) (int, string, string, error)) *ISsoService_Login_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RefreshToken provides a mock function with given fields: ctx, token
-func (_m *ISsoService) RefreshToken(ctx context.Context, token string) (string, string, error) {
-	ret := _m.Called(ctx, token)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RefreshToken")
-	}
-
-	var r0 string
-	var r1 string
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, string, error)); ok {
-		return rf(ctx, token)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, token)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) string); ok {
-		r1 = rf(ctx, token)
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
-		r2 = rf(ctx, token)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// ISsoService_RefreshToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RefreshToken'
-type ISsoService_RefreshToken_Call struct {
-	*mock.Call
-}
-
-// RefreshToken is a helper method to define mock.On call
-//   - ctx context.Context
-//   - token string
-func (_e *ISsoService_Expecter) RefreshToken(ctx interface{}, token interface{}) *ISsoService_RefreshToken_Call {
-	return &ISsoService_RefreshToken_Call{Call: _e.mock.On("RefreshToken", ctx, token)}
-}
-
-func (_c *ISsoService_RefreshToken_Call) Run(run func(ctx context.Context, token string)) *ISsoService_RefreshToken_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *ISsoService_RefreshToken_Call) Return(_a0 string, _a1 string, _a2 error) *ISsoService_RefreshToken_Call {
+func (_c *ISsoService_Login_Call) Return(_a0 int, _a1 string, _a2 error) *ISsoService_Login_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *ISsoService_RefreshToken_Call) RunAndReturn(run func(context.Context, string) (string, string, error)) *ISsoService_RefreshToken_Call {
+func (_c *ISsoService_Login_Call) RunAndReturn(run func(context.Context, string, string) (int, string, error)) *ISsoService_Login_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Register provides a mock function with given fields: ctx, email, password
-func (_m *ISsoService) Register(ctx context.Context, email string, password string) (string, error) {
+func (_m *ISsoService) Register(ctx context.Context, email string, password string) (string, string, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
@@ -224,8 +153,9 @@ func (_m *ISsoService) Register(ctx context.Context, email string, password stri
 	}
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, string, error)); ok {
 		return rf(ctx, email, password)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
@@ -234,13 +164,19 @@ func (_m *ISsoService) Register(ctx context.Context, email string, password stri
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
 		r1 = rf(ctx, email, password)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(string)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = rf(ctx, email, password)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // ISsoService_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
@@ -263,12 +199,12 @@ func (_c *ISsoService_Register_Call) Run(run func(ctx context.Context, email str
 	return _c
 }
 
-func (_c *ISsoService_Register_Call) Return(_a0 string, _a1 error) *ISsoService_Register_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *ISsoService_Register_Call) Return(_a0 string, _a1 string, _a2 error) *ISsoService_Register_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, string, string) (string, error)) *ISsoService_Register_Call {
+func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, string, string) (string, string, error)) *ISsoService_Register_Call {
 	_c.Call.Return(run)
 	return _c
 }

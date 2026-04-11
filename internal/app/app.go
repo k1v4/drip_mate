@@ -99,7 +99,7 @@ func Run() {
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
 
-	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, cfg.Token.TTL, cfg.Token.RefreshTTL)
+	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, new(cfg.Token))
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
 
@@ -108,7 +108,7 @@ func Run() {
 	e := echo.New()
 	e.HideBanner = true
 	e.HTTPErrorHandler = makeHTTPErrorHandler(serviceLogger)
-	router.NewRouter(e, serviceLogger, authUseCase)
+	router.NewRouter(e, serviceLogger, authUseCase, cfg)
 
 	httpServer := httpserver.New(e, httpserver.Port(strconv.Itoa(cfg.Server.RestPort)))
 	grpcServer, err := grpcTransport.NewServer(ctx, cfg.Server.GRPCPort, uploadService)

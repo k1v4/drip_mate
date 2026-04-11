@@ -31,24 +31,24 @@ func (a *AuthRepository) SaveUser(
 	ctx context.Context,
 	email string,
 	password []byte,
-) (string, error) {
+) (string, int, error) {
 	const op = "repository.SaveUser"
 
 	var id string
+	var accessID int
 	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
 		sqlReq, args, err := a.Builder.
 			Insert("users").
 			Columns("email", "password").
 			Values(email, password).
-			Suffix("RETURNING id").
+			Suffix("RETURNING id, access_id").
 			ToSql()
 		if err != nil {
 			return fmt.Errorf("%s: build sql: %w", op, err)
 		}
 
-		if err = tx.QueryRow(ctx, sqlReq, args...).Scan(&id); err != nil {
-			var pgErr *pgconn.PgError
-			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if err = tx.QueryRow(ctx, sqlReq, args...).Scan(&id, &accessID); err != nil {
+			if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == "23505" {
 				return DataBase.ErrUserExists
 			}
 
@@ -59,10 +59,10 @@ func (a *AuthRepository) SaveUser(
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return id, nil
+	return id, accessID, nil
 }
 
 // GetUser takes user from Database by Email
