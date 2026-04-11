@@ -26,8 +26,9 @@ type Server struct {
 }
 
 type Token struct {
-	TTL        time.Duration `yaml:"ttl"         env:"TOKEN_TTL"         env-default:"1h"`
-	RefreshTTL time.Duration `yaml:"refresh_ttl" env:"REFRESH_TOKEN_TTL" env-default:"24h"`
+	TTL    time.Duration `yaml:"ttl"         env:"TOKEN_TTL"         env-default:"24h"`
+	Secret string        `yaml:"secret" env:"TOKEN_SECRET" env-required:"true"`
+	Issuer string        `yaml:"issuer" env:"TOKEN_ISSUER" env-default:"drip-mate"`
 }
 
 type Kafka struct {

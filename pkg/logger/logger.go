@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"time"
 
 	"github.com/labstack/gommon/log"
 	"go.uber.org/zap"
@@ -26,7 +27,7 @@ type Logger interface {
 }
 
 func (l *logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
-	fields = append(fields, zap.String(ServiceName, l.serviceName))
+	fields = append(fields, zap.Time("time", time.Now()), zap.String(ServiceName, l.serviceName))
 
 	if ctx.Value(RequestID) != nil {
 		fields = append(fields, zap.String(RequestID, ctx.Value(RequestID).(string)))
@@ -36,7 +37,7 @@ func (l *logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
 }
 
 func (l *logger) Error(ctx context.Context, msg string, fields ...zap.Field) {
-	fields = append(fields, zap.String(ServiceName, l.serviceName))
+	fields = append(fields, zap.Time("time", time.Now()), zap.String(ServiceName, l.serviceName))
 
 	if ctx.Value(RequestID) != nil {
 		fields = append(fields, zap.String(RequestID, ctx.Value(RequestID).(string)))

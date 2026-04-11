@@ -3,12 +3,13 @@ package usecase
 import (
 	"context"
 
-	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
+	"github.com/k1v4/drip_mate/internal/entity"
+	notificationEntity "github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
 )
 
 // IHandler интерфейс для чтения сообщения из кафки
 type IHandler interface {
-	Handle(ctx context.Context, msg *entity.Message) error
+	Handle(ctx context.Context, event *entity.NotificationEvent) error
 }
 
 type IUseCase interface {
@@ -17,5 +18,5 @@ type IUseCase interface {
 
 // EmailClient интерфейс для отправки email
 type EmailClient interface {
-	Send(email *entity.Email) (*entity.SendResult, error)
+	Send(email *notificationEntity.Email) (*notificationEntity.SendResult, error)
 }

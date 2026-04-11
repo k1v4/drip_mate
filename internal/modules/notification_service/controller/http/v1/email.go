@@ -2,10 +2,9 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
+	"github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 )
 
@@ -19,12 +18,7 @@ func NewEmailController(useCase usecase.IUseCase) *EmailController {
 	}
 }
 
-func (c *EmailController) Handle(ctx context.Context, msg *entity.Message) error {
-	var event entity.NotificationEvent
-	if err := json.Unmarshal(msg.Value, &event); err != nil {
-		return fmt.Errorf("unmarshal event: %w", err)
-	}
-
+func (c *EmailController) Handle(ctx context.Context, event *entity.NotificationEvent) error {
 	if event.Email == "" {
 		return fmt.Errorf("empty email")
 	}

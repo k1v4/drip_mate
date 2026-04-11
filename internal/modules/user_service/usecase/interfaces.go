@@ -7,7 +7,7 @@ import (
 )
 
 type ISsoRepository interface {
-	SaveUser(ctx context.Context, email string, password []byte) (string, error)
+	SaveUser(ctx context.Context, email string, password []byte) (string, int, error)
 	GetUser(ctx context.Context, email string) (entity.User, error)
 	GetUserById(ctx context.Context, id string) (entity.User, error)
 	DeleteUser(ctx context.Context, id string) error
@@ -15,9 +15,8 @@ type ISsoRepository interface {
 }
 
 type ISsoService interface {
-	Login(ctx context.Context, email string, password string) (int, string, string, error)
-	Register(ctx context.Context, email, password string) (string, error)
+	Login(ctx context.Context, email string, password string) (int, string, error)
+	Register(ctx context.Context, email, password string) (string, string, error)
 	DeleteAccount(ctx context.Context, id string) (bool, error)
 	UpdateUserInfo(ctx context.Context, id string, email, password, name, surname, username, city string) (entity.User, error)
-	RefreshToken(ctx context.Context, token string) (string, string, error)
 }

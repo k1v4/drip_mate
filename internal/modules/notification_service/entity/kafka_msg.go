@@ -8,7 +8,3 @@ type Message struct {
 	Partition int
 	Offset    int64
 }
-
-type NotificationEvent struct {
-	Email string `json:"email"`
-}

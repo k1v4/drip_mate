@@ -184,7 +184,7 @@ func (_c *ISsoRepository_GetUserById_Call) RunAndReturn(run func(context.Context
 }
 
 // SaveUser provides a mock function with given fields: ctx, email, password
-func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password []byte) (string, error) {
+func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password []byte) (string, int, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
@@ -192,8 +192,9 @@ func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password [
 	}
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) (string, error)); ok {
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) (string, int, error)); ok {
 		return rf(ctx, email, password)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) string); ok {
@@ -202,13 +203,19 @@ func (_m *ISsoRepository) SaveUser(ctx context.Context, email string, password [
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) int); ok {
 		r1 = rf(ctx, email, password)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, string, []byte) error); ok {
+		r2 = rf(ctx, email, password)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // ISsoRepository_SaveUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SaveUser'
@@ -231,12 +238,12 @@ func (_c *ISsoRepository_SaveUser_Call) Run(run func(ctx context.Context, email 
 	return _c
 }
 
-func (_c *ISsoRepository_SaveUser_Call) Return(_a0 string, _a1 error) *ISsoRepository_SaveUser_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *ISsoRepository_SaveUser_Call) Return(_a0 string, _a1 int, _a2 error) *ISsoRepository_SaveUser_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *ISsoRepository_SaveUser_Call) RunAndReturn(run func(context.Context, string, []byte) (string, error)) *ISsoRepository_SaveUser_Call {
+func (_c *ISsoRepository_SaveUser_Call) RunAndReturn(run func(context.Context, string, []byte) (string, int, error)) *ISsoRepository_SaveUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

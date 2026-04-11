@@ -32,7 +32,7 @@ func TestAuthController_Login(t *testing.T) {
 	e := setupEcho()
 	mockSvc := mocksInternal.NewISsoService(t)
 	mockLogger := mocksPks.NewLogger(t)
-	NewSsoRoutes(e.Group("/api/v1"), mockSvc, mockLogger)
+	NewSsoRoutes(e.Group("/api/v1"), mockSvc, mockLogger, nil)
 
 	tests := []struct {
 		name           string
@@ -48,7 +48,7 @@ func TestAuthController_Login(t *testing.T) {
 				mockSvc.
 					EXPECT().
 					Login(mock.Anything, "user@mail.com", "password123").
-					Return(1, "access-token", "refresh-token", nil).
+					Return(1, "access-token", nil).
 					Once()
 			},
 			expectedStatus: http.StatusOK,
@@ -79,7 +79,7 @@ func TestAuthController_Login(t *testing.T) {
 				mockSvc.
 					EXPECT().
 					Login(mock.Anything, "user@mail.com", "wrong").
-					Return(0, "", "", usecase.ErrInvalidCredentials).
+					Return(0, "", usecase.ErrInvalidCredentials).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: invalid credentials").Return().Once()
 			},
@@ -93,7 +93,7 @@ func TestAuthController_Login(t *testing.T) {
 				mockSvc.
 					EXPECT().
 					Login(mock.Anything, "nouser@mail.com", "password123").
-					Return(0, "", "", usecase.ErrNoUser).
+					Return(0, "", usecase.ErrNoUser).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: user not exist").Return().Once()
 			},
@@ -107,7 +107,7 @@ func TestAuthController_Login(t *testing.T) {
 				mockSvc.
 					EXPECT().
 					Login(mock.Anything, "user@mail.com", "password123").
-					Return(0, "", "", errors.New("something bad")).
+					Return(0, "", errors.New("something bad")).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: something bad").Return().Once()
 			},
@@ -155,7 +155,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "new@mail.com", "password12345").
-					Return(gofakeit.UUID(), nil).
+					Return(gofakeit.UUID(), "", nil).
 					Once()
 			},
 			expectedStatus: http.StatusOK,
@@ -194,7 +194,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return("", usecase.ErrUserExist).
+					Return("", "", usecase.ErrUserExist).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: user exist").Return().Once()
 			},
@@ -207,7 +207,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return("", errors.New("something bad")).
+					Return("", "", errors.New("something bad")).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: something bad").Return().Once()
 			},
@@ -333,7 +333,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 
 			if tc.needToken {
 				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
-				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute)
+				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute, "", "")
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
 
@@ -422,72 +422,12 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 
 			if tc.needToken {
 				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
-				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute)
+				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute, "", "")
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
 
 			tc.mockReturn()
 			_ = handler.DeleteAccount(ctx)
-
-			assert.Equal(t, tc.expectedStatus, rec.Code)
-			if tc.expectedBody != "" {
-				assert.Contains(t, rec.Body.String(), tc.expectedBody)
-			}
-		})
-	}
-}
-
-func TestAuthController_RefreshToken(t *testing.T) {
-	e := setupEcho()
-	mockSvc := mocksInternal.NewISsoService(t)
-	mockLogger := mocksPks.NewLogger(t)
-	handler := &containerRoutes{t: mockSvc, l: mockLogger}
-
-	tests := []struct {
-		name           string
-		token          string
-		mockReturn     func()
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			name:  "success",
-			token: "old-refresh",
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					RefreshToken(mock.Anything, "old-refresh").
-					Return("new-access", "new-refresh", nil).
-					Once()
-			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   `"access_token":"new-access"`,
-		},
-		{
-			name:  "invalid token",
-			token: "bad-refresh",
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					RefreshToken(mock.Anything, "bad-refresh").
-					Return("", "", errors.New("invalid")).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.RefreshToken: invalid").Return().Once()
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "token error",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/refresh", nil)
-			if tc.token != "" {
-				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tc.token)
-			}
-			ctx := e.NewContext(req, rec)
-
-			tc.mockReturn()
-			_ = handler.RefreshToken(ctx)
 
 			assert.Equal(t, tc.expectedStatus, rec.Code)
 			if tc.expectedBody != "" {

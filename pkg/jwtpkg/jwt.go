@@ -3,7 +3,6 @@ package jwtpkg
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
@@ -12,26 +11,23 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// TODO унести в конфиг
-const secret = "secret"
-
 func ExtractToken(c echo.Context) string {
-	bearerToken := c.Request().Header.Get("Authorization")
-
-	if bearerToken == "" {
+	// сначала пробуем куку
+	cookie, err := c.Cookie("access_token")
+	if err != nil {
 		return ""
 	}
 
-	return strings.TrimPrefix(bearerToken, "Bearer ")
+	return cookie.Value
 }
 
-func NewAccessToken(user *entity.User, duration time.Duration) (string, error) {
+func NewAccessToken(user *entity.User, duration time.Duration, secret, issuer string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
 
+	claims["iss"] = issuer
 	claims["id"] = user.ID
-	claims["email"] = user.Email
 	claims["access_level_id"] = user.AccessLevelId
 	claims["exp"] = time.Now().Add(duration).Unix()
 
@@ -43,58 +39,14 @@ func NewAccessToken(user *entity.User, duration time.Duration) (string, error) {
 	return tokenString, nil
 }
 
-// ValidateToken Функция для валидации токена
-func ValidateToken(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("неожиданный метод подписи: %v", token.Header["alg"])
-		}
-		return []byte(secret), nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
-	} else {
-		return nil, errors.New("невалидный токен")
-	}
-}
-
-// RefreshAccessToken Функция для обновления Access Token с помощью Refresh Token
-func RefreshAccessToken(refreshToken string, duration time.Duration) (string, error) {
-	// Валидируем Refresh Token
-	claims, err := ValidateToken(refreshToken)
-	if err != nil {
-		return "", fmt.Errorf("невалидный Refresh Token: %v", err)
-	}
-
-	// Извлекаем данные пользователя из claims
-	user := entity.User{
-		ID:    claims["id"].(string),
-		Email: claims["email"].(string),
-	}
-
-	// Создаем новый Access Token
-	newAccessToken, err := NewAccessToken(&user, duration)
-	if err != nil {
-		return "", fmt.Errorf("ошибка при создании Access Token: %v", err)
-	}
-
-	return newAccessToken, nil
-}
-
-func ValidateTokenAndGetUserId(tokenString string) (string, error) {
+func ValidateTokenAndGetUserId(tokenString, secret, issuer string) (string, error) {
 	// парсим токен
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		// проверяем метод подписи
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secret), nil
-	})
+	}, jwt.WithIssuer(issuer))
 	if err != nil {
 		return "", err
 	}

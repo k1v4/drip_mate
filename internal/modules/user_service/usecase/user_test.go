@@ -5,15 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	"time"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	mocks "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/fake"
-	"github.com/k1v4/drip_mate/pkg/jwtpkg"
-
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -86,11 +83,11 @@ func TestAuthUseCase_Login(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := new(mocks.ISsoRepository)
-			authUC := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			authUC := NewAuthUseCase(mockRepo, nil, nil, nil)
 
 			mockRepo.On("GetUser", ctx, tc.email).Return(tc.mockUser, tc.mockError)
 
-			accessLevelId, accessToken, refreshToken, err := authUC.Login(ctx, tc.email, tc.password)
+			accessLevelId, accessToken, err := authUC.Login(ctx, tc.email, tc.password)
 
 			if tc.expectedError != nil {
 				require.Error(t, err)
@@ -105,11 +102,8 @@ func TestAuthUseCase_Login(t *testing.T) {
 
 			if tc.expectTokens {
 				assert.NotEmpty(t, accessToken)
-				assert.NotEmpty(t, refreshToken)
-				assert.NotEqual(t, accessToken, refreshToken)
 			} else {
 				assert.Empty(t, accessToken)
-				assert.Empty(t, refreshToken)
 			}
 		})
 	}
@@ -163,11 +157,11 @@ func TestAuthUseCase_Register(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil)
 
-			mockRepo.EXPECT().SaveUser(ctx, tc.email, mock.Anything).Return(tc.id, tc.mockError).Once()
+			mockRepo.EXPECT().SaveUser(ctx, tc.email, mock.Anything).Return(tc.id, 0, tc.mockError).Once()
 
-			registerId, err := useCase.Register(ctx, tc.email, tc.password)
+			registerId, _, err := useCase.Register(ctx, tc.email, tc.password)
 
 			if tc.expectedError != nil {
 				assert.Error(t, err, tc.expectedError)
@@ -216,7 +210,7 @@ func TestAuthUseCase_DeleteAccount(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil)
 
 			mockRepo.
 				EXPECT().
@@ -307,7 +301,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, 15*time.Minute, 7*24*time.Hour)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil)
 
 			mockRepo.
 				EXPECT().
@@ -346,53 +340,6 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedUser, user)
-		})
-	}
-}
-
-func TestAuthUseCase_RefreshToken(t *testing.T) {
-	ctx := context.Background()
-
-	user := fake.CreateUser(
-		gofakeit.Email(),
-		gofakeit.Password(true, true, true, true, true, 12),
-		1,
-	)
-
-	cases := []struct {
-		name          string
-		refreshToken  string
-		expectedError bool
-	}{
-		{
-			name: "success",
-		},
-		{
-			name:          "invalid token",
-			refreshToken:  "invalid",
-			expectedError: true,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			useCase := NewAuthUseCase(nil, 15*time.Minute, 7*24*time.Hour)
-
-			if tc.refreshToken == "" {
-				tc.refreshToken, _ = jwtpkg.NewAccessToken(&user, 1*time.Hour)
-			}
-
-			access, refresh, err := useCase.RefreshToken(ctx, tc.refreshToken)
-
-			if tc.expectedError {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "service.RefreshToken")
-				return
-			}
-
-			assert.NoError(t, err)
-			assert.NotEmpty(t, access)
-			assert.Equal(t, tc.refreshToken, refresh)
 		})
 	}
 }
