@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/AlekSi/pointer"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/logger"
@@ -44,9 +43,9 @@ func (c *Consumer) Run(ctx context.Context) error {
 			return err
 		}
 
-		mappedMsg := mapMessage(pointer.To(msg))
+		mappedMsg := mapMessage(new(msg))
 
-		if getRetryCount(pointer.To(mappedMsg)) > 5 {
+		if getRetryCount(new(mappedMsg)) > 5 {
 			c.l.Error(
 				ctx,
 				"retry limit exceeded, skipping message",
@@ -64,7 +63,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 		}
 
 		//nolint
-		err = c.handler.Handle(ctx, pointer.To(mappedMsg))
+		err = c.handler.Handle(ctx, new(mappedMsg))
 		if err != nil {
 			// логируем и НЕ коммитим offset
 			// сообщение будет перечитано
