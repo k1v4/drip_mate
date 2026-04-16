@@ -1,0 +1,46 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, coverage, and reports
+*.test
+*.out
+coverage.*
+*.cover
+
+# Dependency directories (if vendoring is NOT used)
+vendor/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Build output
+bin/
+build/
+dist/
+
+# Logs
+*.log
+
+
+# IDE files (GoLand / JetBrains)
+.idea/
+
+# VSCode (если вдруг используешь)
+.vscode/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
