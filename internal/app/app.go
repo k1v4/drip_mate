@@ -13,6 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/k1v4/drip_mate/pkg/auth/argon"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -94,12 +95,13 @@ func Run() {
 		}
 	}()
 
+	hasher := argon.NewArgon2Hasher(argon.DefaultParams(), cfg.Hasher.Pepper)
 	email := adapter.NewGoMailClient(cfg.SMTP)
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
 
-	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, new(cfg.Token))
+	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, new(cfg.Token), hasher)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
 

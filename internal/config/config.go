@@ -44,6 +44,10 @@ type SMTP struct {
 	Password string `yaml:"password" env:"SMTP_PASSWORD" env-required:"true"`
 }
 
+type Hasher struct {
+	Pepper string `yaml:"pepper" env:"TOKEN_PEPPER" env-required:"true"`
+}
+
 type Config struct {
 	Server        Server        `yaml:"server"`
 	DB            DB            `yaml:"db"`
@@ -51,6 +55,7 @@ type Config struct {
 	ObjectStorage ObjectStorage `yaml:"object_storage"`
 	Kafka         Kafka         `yaml:"kafka"`
 	SMTP          SMTP          `yaml:"smtp"`
+	Hasher        Hasher        `yaml:"hasher"`
 }
 
 func MustLoadConfig() *Config {

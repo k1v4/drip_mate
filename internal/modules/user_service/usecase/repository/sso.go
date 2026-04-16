@@ -30,7 +30,7 @@ func NewAuthRepository(pg *postgres.Postgres) *AuthRepository {
 func (a *AuthRepository) SaveUser(
 	ctx context.Context,
 	email string,
-	password []byte,
+	password string,
 ) (string, int, error) {
 	const op = "repository.SaveUser"
 

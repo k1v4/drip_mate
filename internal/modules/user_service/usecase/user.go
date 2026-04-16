@@ -9,11 +9,10 @@ import (
 	"github.com/k1v4/drip_mate/internal/entity"
 	userEntity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
+	"github.com/k1v4/drip_mate/pkg/auth"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"
 	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/k1v4/drip_mate/pkg/logger"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -27,14 +26,16 @@ type AuthUseCase struct {
 	logger        logger.Logger
 	kafkaProducer *kafkaPkg.Producer
 	cfg           *config.Token
+	hasher        auth.PasswordHasher
 }
 
-func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer, cfg *config.Token) *AuthUseCase {
+func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer, cfg *config.Token, hasher auth.PasswordHasher) *AuthUseCase {
 	return &AuthUseCase{
 		repo:          repo,
 		logger:        logger,
 		kafkaProducer: kafkaProducer,
 		cfg:           cfg,
+		hasher:        hasher,
 	}
 }
 
@@ -52,12 +53,12 @@ func (s *AuthUseCase) Login(ctx context.Context, email string, password string) 
 		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	if err = bcrypt.CompareHashAndPassword(user.Password, []byte(password)); err != nil {
-		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return 0, "", ErrInvalidCredentials
-		}
-
+	ok, err := s.hasher.Verify(password, user.Password)
+	if err != nil {
 		return 0, "", fmt.Errorf("%s: %w", op, err)
+	}
+	if !ok {
+		return 0, "", ErrInvalidCredentials
 	}
 
 	tokenAccess, err := jwtpkg.NewAccessToken(&user, s.cfg.TTL, s.cfg.Secret, s.cfg.Issuer)
@@ -73,7 +74,7 @@ func (s *AuthUseCase) Login(ctx context.Context, email string, password string) 
 func (s *AuthUseCase) Register(ctx context.Context, email, password string) (string, string, error) {
 	const op = "service.Register"
 
-	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	passHash, err := s.hasher.Hash(password)
 	if err != nil {
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -127,11 +128,10 @@ func (s *AuthUseCase) UpdateUserInfo(
 ) (userEntity.User, error) {
 	const op = "service.UpdateUserInfo"
 
-	passHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	passHash, err := s.hasher.Hash(password)
 	if err != nil {
 		return userEntity.User{}, fmt.Errorf("%s: %w", op, err)
 	}
-
 	userID, err := s.repo.UpdateUser(ctx, &userEntity.User{
 		ID:       id,
 		Email:    email,

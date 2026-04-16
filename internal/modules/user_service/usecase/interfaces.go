@@ -7,7 +7,7 @@ import (
 )
 
 type ISsoRepository interface {
-	SaveUser(ctx context.Context, email string, password []byte) (string, int, error)
+	SaveUser(ctx context.Context, email string, password string) (string, int, error)
 	GetUser(ctx context.Context, email string) (entity.User, error)
 	GetUserById(ctx context.Context, id string) (entity.User, error)
 	DeleteUser(ctx context.Context, id string) error
