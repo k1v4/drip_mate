@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -73,30 +74,28 @@ func (a *Hasher) Hash(password string) (string, error) {
 }
 
 func (a *Hasher) Verify(password, encodedHash string) (bool, error) {
+	parts := strings.Split(encodedHash, "$")
+	if len(parts) != 6 {
+		return false, fmt.Errorf("invalid hash format: expected 6 parts, got %d", len(parts))
+	}
+
 	var memory, time uint32
 	var threads uint8
-	var saltB64, hashB64 string
-
-	_, err := fmt.Sscanf(
-		encodedHash,
-		"$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s",
-		&memory, &time, &threads, &saltB64, &hashB64,
-	)
+	_, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &time, &threads)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("invalid params segment %q: %w", parts[3], err)
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(saltB64)
+	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("invalid salt: %w", err)
 	}
 
-	expectedHash, err := base64.RawStdEncoding.DecodeString(hashB64)
+	expectedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("invalid hash: %w", err)
 	}
 
-	// 👇 тот же pepper
 	input := password + a.pepper
 
 	hash := argon2.IDKey(

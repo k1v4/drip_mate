@@ -16,8 +16,7 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
-	AccessId    int    `json:"access_id"`
+	AccessId int `json:"access_id"`
 }
 
 type IsAdminRequest struct {

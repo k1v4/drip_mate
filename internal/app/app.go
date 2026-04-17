@@ -123,6 +123,7 @@ func Run() {
 		Topic:          cfg.Kafka.Topic,
 		GroupID:        cfg.Kafka.GroupID,
 		CommitInterval: 0,
+		StartOffset:    kafka.FirstOffset,
 	})
 
 	// создаём consumer
