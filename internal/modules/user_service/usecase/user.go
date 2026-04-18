@@ -24,12 +24,12 @@ var (
 type AuthUseCase struct {
 	repo          ISsoRepository
 	logger        logger.Logger
-	kafkaProducer *kafkaPkg.Producer
+	kafkaProducer *kafkaPkg.Producer[entity.NotificationEvent]
 	cfg           *config.Token
 	hasher        auth.PasswordHasher
 }
 
-func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer, cfg *config.Token, hasher auth.PasswordHasher) *AuthUseCase {
+func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer[entity.NotificationEvent], cfg *config.Token, hasher auth.PasswordHasher) *AuthUseCase {
 	return &AuthUseCase{
 		repo:          repo,
 		logger:        logger,
@@ -96,7 +96,7 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password string) (str
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	err = s.kafkaProducer.SendNotification(ctx, entity.NotificationEvent{
+	err = s.kafkaProducer.Send(ctx, entity.NotificationEvent{
 		Email: email,
 	})
 	if err != nil {

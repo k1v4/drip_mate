@@ -6,16 +6,15 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/k1v4/drip_mate/internal/entity"
 	"github.com/segmentio/kafka-go"
 )
 
-type Producer struct {
+type Producer[T any] struct {
 	writer *kafka.Writer
 }
 
-func NewProducer(brokers []string, topic string) *Producer {
-	return &Producer{
+func NewProducer[T any](brokers []string, topic string) *Producer[T] {
+	return &Producer[T]{
 		writer: &kafka.Writer{
 			Addr:                   kafka.TCP(brokers...),
 			Topic:                  topic,
@@ -25,36 +24,28 @@ func NewProducer(brokers []string, topic string) *Producer {
 	}
 }
 
-func (p *Producer) SendNotification(ctx context.Context, event entity.NotificationEvent) error {
+func (p *Producer[T]) Send(ctx context.Context, event T) error {
 	return p.sendWithRetry(ctx, event, 0)
 }
 
-func (p *Producer) Retry(ctx context.Context, event entity.NotificationEvent, currentRetry int) error {
+func (p *Producer[T]) Retry(ctx context.Context, event T, currentRetry int) error {
 	return p.sendWithRetry(ctx, event, currentRetry+1)
 }
 
-func (p *Producer) sendWithRetry(ctx context.Context, event entity.NotificationEvent, retryCount int) error {
+func (p *Producer[T]) sendWithRetry(ctx context.Context, event T, retryCount int) error {
 	body, err := json.Marshal(event)
 	if err != nil {
-		return fmt.Errorf("marshal notification event: %w", err)
+		return fmt.Errorf("marshal event: %w", err)
 	}
 
-	err = p.writer.WriteMessages(ctx, kafka.Message{
+	return p.writer.WriteMessages(ctx, kafka.Message{
 		Value: body,
 		Headers: []kafka.Header{
-			{
-				Key:   RetryHeader,
-				Value: []byte(strconv.Itoa(retryCount)),
-			},
+			{Key: "x-retry-count", Value: []byte(strconv.Itoa(retryCount))},
 		},
 	})
-	if err != nil {
-		return fmt.Errorf("write kafka message: %w", err)
-	}
-
-	return nil
 }
 
-func (p *Producer) Close() error {
+func (p *Producer[T]) Close() error {
 	return p.writer.Close()
 }

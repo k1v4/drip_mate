@@ -4,12 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 
-	"github.com/k1v4/drip_mate/internal/entity"
-	notificationEntity "github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
-	"github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
+	totalEntity "github.com/k1v4/drip_mate/internal/modules/notification_service/entity"
 	"github.com/k1v4/drip_mate/pkg/logger"
 
 	"github.com/segmentio/kafka-go"
@@ -18,73 +15,83 @@ import (
 
 const RetryHeader = "x-retry-count"
 
-type Consumer struct {
+type Consumer[T any] struct {
 	reader   *kafka.Reader
-	producer *Producer
-	handler  usecase.IHandler
+	producer *Producer[T]                    // Продюсер теперь того же типа, что и консьюмер
+	handler  func(context.Context, *T) error // Используем функцию или интерфейс
 	l        logger.Logger
 }
 
-func NewConsumer(
+func NewConsumer[T any](
 	reader *kafka.Reader,
-	handler usecase.IHandler,
-	producer *Producer,
+	producer *Producer[T],
+	handler func(context.Context, *T) error,
 	l logger.Logger,
-) *Consumer {
-	return &Consumer{
+) *Consumer[T] {
+	return &Consumer[T]{
 		reader:   reader,
-		handler:  handler,
 		producer: producer,
+		handler:  handler,
 		l:        l,
 	}
 }
 
-func (c *Consumer) Run(ctx context.Context) error {
+func (c *Consumer[T]) Run(ctx context.Context) error {
+	c.l.Info(ctx, "consumer started, waiting for messages",
+		zap.String("topic", c.reader.Config().Topic),
+		zap.String("groupID", c.reader.Config().GroupID),
+	)
+
 	for {
 		msg, err := c.reader.ReadMessage(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
+				c.l.Info(ctx, "consumer stopped")
 				return nil
 			}
+			c.l.Error(ctx, "read message error", zap.Error(err))
 			return err
 		}
 
-		mappedMsg := mapMessage(&msg)
-		c.l.Info(ctx, fmt.Sprintf("Message received: %v", mappedMsg))
+		c.l.Info(ctx, "received message",
+			zap.String("topic", msg.Topic),
+			zap.String("value", string(msg.Value)),
+		)
 
-		if getRetryCount(new(mappedMsg)) > 5 {
-			c.l.Error(
-				ctx,
-				"retry limit exceeded, skipping message",
+		mappedMsg := mapMessage(new(msg))
+
+		retryCount := getRetryCount(new(mappedMsg))
+
+		if retryCount > 5 {
+			c.l.Error(ctx, "retry limit exceeded, skipping message",
 				zap.String("topic", mappedMsg.Topic),
 				zap.Int("partition", mappedMsg.Partition),
 				zap.Int64("offset", mappedMsg.Offset),
 			)
-
-			// принудительно коммитим offset
 			if err := c.reader.CommitMessages(ctx, msg); err != nil {
 				return err
 			}
-
 			continue
 		}
 
-		var event entity.NotificationEvent
+		var event T
 		if err := json.Unmarshal(mappedMsg.Value, &event); err != nil {
-			return fmt.Errorf("unmarshal event: %w", err)
+			c.l.Error(ctx, "unmarshal error", zap.Error(err))
+			if err := c.reader.CommitMessages(ctx, msg); err != nil {
+				return err
+			}
+			continue
 		}
 
-		err = c.handler.Handle(ctx, &event)
-		if err != nil {
+		// Вызываем хендлер
+		if err := c.handler(ctx, &event); err != nil {
 			c.l.Error(ctx, "error handling message", zap.Error(err))
 
-			// 4. при ошибке — переотправляем с incremented retry count
-			retryCount := getRetryCount(&mappedMsg)
+			// Отправляем в ретрай тот же тип события
 			if retryErr := c.producer.Retry(ctx, event, retryCount); retryErr != nil {
 				c.l.Error(ctx, "failed to retry", zap.Error(retryErr))
 			}
 
-			// коммитим оригинал чтобы не читать его снова
 			_ = c.reader.CommitMessages(ctx, msg)
 			continue
 		}
@@ -95,13 +102,13 @@ func (c *Consumer) Run(ctx context.Context) error {
 	}
 }
 
-func mapMessage(message *kafka.Message) notificationEntity.Message {
+func mapMessage(message *kafka.Message) totalEntity.Message {
 	headers := make(map[string][]byte, len(message.Headers))
 	for _, h := range message.Headers {
 		headers[h.Key] = h.Value
 	}
 
-	return notificationEntity.Message{
+	return totalEntity.Message{
 		Key:       message.Key,
 		Value:     message.Value,
 		Headers:   headers,
@@ -111,7 +118,7 @@ func mapMessage(message *kafka.Message) notificationEntity.Message {
 	}
 }
 
-func getRetryCount(msg *notificationEntity.Message) int {
+func getRetryCount(msg *totalEntity.Message) int {
 	if v, ok := msg.Headers[RetryHeader]; ok {
 		n, _ := strconv.Atoi(string(v))
 		return n

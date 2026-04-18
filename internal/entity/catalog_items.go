@@ -49,3 +49,16 @@ type UpdateCatalogRequest struct {
 	ColorIDs       []int     `json:"color_ids" form:"color_ids"       validate:"omitempty,dive"`
 	StyleIDs       []int     `json:"style_ids" form:"style_ids"       validate:"omitempty,dive"`
 }
+
+type CatalogType string
+
+var (
+	CatalogCreated = CatalogType("created")
+	CatalogUpdated = CatalogType("updated")
+	CatalogDeleted = CatalogType("deleted")
+)
+
+type CatalogEvent struct {
+	Type    CatalogType `json:"type"` // "created" | "updated" | "deleted"
+	Payload *Catalog    `json:"payload"`
+}

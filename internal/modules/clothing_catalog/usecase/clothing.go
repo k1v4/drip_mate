@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/k1v4/drip_mate/pkg/logger"
 
 	"github.com/k1v4/drip_mate/internal/entity"
 	objectTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
+	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 )
 
 type IClothingRepository interface {
@@ -20,15 +22,21 @@ type IClothingRepository interface {
 type ClothingCatalogUseCase struct {
 	repoClothing  IClothingRepository
 	objectService objectTransport.IUploadService
+	kafkaProducer *kafkaPkg.Producer[entity.CatalogEvent]
+	l             logger.Logger
 }
 
 func NewClothingCatalogUseCase(
 	repoClothing IClothingRepository,
 	objectService objectTransport.IUploadService,
+	kafkaProducer *kafkaPkg.Producer[entity.CatalogEvent],
+	l logger.Logger,
 ) *ClothingCatalogUseCase {
 	return &ClothingCatalogUseCase{
 		repoClothing:  repoClothing,
 		objectService: objectService,
+		kafkaProducer: kafkaProducer,
+		l:             l,
 	}
 }
 
@@ -56,7 +64,20 @@ func (uc *ClothingCatalogUseCase) CreateItem(ctx context.Context, req *entity.Cr
 		return nil, fmt.Errorf("failed to create item: %w", err)
 	}
 
-	return item, nil
+	fullItem, err := uc.repoClothing.GetItemByID(ctx, item.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch item: %w", err)
+	}
+
+	err = uc.kafkaProducer.Send(ctx, entity.CatalogEvent{
+		Type:    entity.CatalogCreated,
+		Payload: fullItem,
+	})
+	if err != nil {
+		uc.l.Error(ctx, fmt.Sprintf("failed to send create catalog event to ml: %v", err))
+	}
+
+	return fullItem, nil
 }
 
 func (uc *ClothingCatalogUseCase) UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest, fileName string, imageData []byte) (*entity.Catalog, error) {
@@ -90,7 +111,20 @@ func (uc *ClothingCatalogUseCase) UpdateItem(ctx context.Context, req *entity.Up
 		return nil, fmt.Errorf("failed to update item: %w", err)
 	}
 
-	return item, nil
+	fullItem, err := uc.repoClothing.GetItemByID(ctx, item.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch item: %w", err)
+	}
+
+	err = uc.kafkaProducer.Send(ctx, entity.CatalogEvent{
+		Type:    entity.CatalogUpdated,
+		Payload: fullItem,
+	})
+	if err != nil {
+		uc.l.Error(ctx, fmt.Sprintf("failed to send update catalog event to ml: %v", err))
+	}
+
+	return fullItem, nil
 }
 
 func (uc *ClothingCatalogUseCase) DeleteItem(ctx context.Context, id uuid.UUID) error {
@@ -99,6 +133,14 @@ func (uc *ClothingCatalogUseCase) DeleteItem(ctx context.Context, id uuid.UUID) 
 	err := uc.repoClothing.DeleteItem(ctx, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = uc.kafkaProducer.Send(ctx, entity.CatalogEvent{
+		Type:    entity.CatalogDeleted,
+		Payload: &entity.Catalog{ID: id},
+	})
+	if err != nil {
+		uc.l.Error(ctx, fmt.Sprintf("failed to send delete catalog event to ml: %v", err))
 	}
 
 	return nil
