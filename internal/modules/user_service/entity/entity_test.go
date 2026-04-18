@@ -20,7 +20,7 @@ func TestUser_MarshalUnmarshalBinary(t *testing.T) {
 			user: entity.User{
 				ID:              gofakeit.UUID(),
 				Email:           "test@mail.com",
-				Password:        []byte("secret"),
+				Password:        "secret",
 				Name:            "John",
 				Surname:         "Doe",
 				Username:        "johndoe",

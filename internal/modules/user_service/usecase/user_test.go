@@ -9,16 +9,17 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	mocks "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
+	mocks2 "github.com/k1v4/drip_mate/mocks/pkg/auth"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func TestAuthUseCase_Login(t *testing.T) {
 	ctx := context.Background()
+	hasher := mocks2.NewPasswordHasher(t)
 
 	testCases := []struct {
 		name          string
@@ -34,7 +35,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 			name:          "success",
 			email:         "test@example.com",
 			password:      "correctPassword123",
-			mockUser:      fake.CreateUser("test@example.com", "correctPassword123", 2),
+			mockUser:      fake.CreateUser("test@example.com", "correctPassword123", 2, hasher),
 			expectedError: nil,
 			expectTokens:  true,
 			expectedLevel: 2,
@@ -53,7 +54,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 			name:          "wrong pass",
 			email:         "test@example.com",
 			password:      "wrongPassword",
-			mockUser:      fake.CreateUser("test@example.com", "correctPassword123", 1),
+			mockUser:      fake.CreateUser("test@example.com", "correctPassword123", 1, hasher),
 			expectedError: ErrInvalidCredentials,
 			expectTokens:  false,
 			expectedLevel: 0,
@@ -83,7 +84,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := new(mocks.ISsoRepository)
-			authUC := NewAuthUseCase(mockRepo, nil, nil, nil)
+			authUC := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
 
 			mockRepo.On("GetUser", ctx, tc.email).Return(tc.mockUser, tc.mockError)
 
@@ -111,6 +112,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 
 func TestAuthUseCase_Register(t *testing.T) {
 	ctx := context.Background()
+	hasher := mocks2.NewPasswordHasher(t)
 
 	cases := []struct {
 		name          string
@@ -157,7 +159,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
 
 			mockRepo.EXPECT().SaveUser(ctx, tc.email, mock.Anything).Return(tc.id, 0, tc.mockError).Once()
 
@@ -176,6 +178,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 
 func TestAuthUseCase_DeleteAccount(t *testing.T) {
 	ctx := context.Background()
+	hasher := mocks2.NewPasswordHasher(t)
 
 	cases := []struct {
 		name          string
@@ -210,7 +213,7 @@ func TestAuthUseCase_DeleteAccount(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
 
 			mockRepo.
 				EXPECT().
@@ -234,6 +237,7 @@ func TestAuthUseCase_DeleteAccount(t *testing.T) {
 
 func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 	ctx := context.Background()
+	hasher := mocks2.NewPasswordHasher(t)
 
 	cases := []struct {
 		name          string
@@ -301,14 +305,15 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
 
 			mockRepo.
 				EXPECT().
 				UpdateUser(ctx, mock.MatchedBy(func(u entity.User) bool {
+					isP, _ := hasher.Verify(u.Password, tc.password)
+
 					return u.ID == tc.inputUser.ID &&
-						u.Email == tc.inputUser.Email &&
-						bcrypt.CompareHashAndPassword(u.Password, []byte(tc.password)) == nil
+						u.Email == tc.inputUser.Email && isP
 				})).
 				Return(tc.updateID, tc.updateErr).
 				Once()
