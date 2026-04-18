@@ -90,16 +90,8 @@ func (r *containerRoutes) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(err)
 	}
 
-	if len([]rune(u.Password)) < 10 {
-		err := errors.New("password must be equal or longer than 10")
-		r.l.Error(ctx, fmt.Sprintf("%s: invalid password", op))
-		return echo.NewHTTPError(http.StatusBadRequest, "password must be equal or longer than 10").SetInternal(err)
-	}
-
-	if len([]rune(u.Email)) == 0 {
-		err := errors.New("email is required")
-		r.l.Error(ctx, fmt.Sprintf("%s: invalid email", op))
-		return echo.NewHTTPError(http.StatusBadRequest, "email is required").SetInternal(err)
+	if err := c.Validate(u); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(err)
 	}
 
 	register, accessToken, err := r.t.Register(ctx, u.Email, u.Password)

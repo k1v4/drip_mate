@@ -22,25 +22,52 @@ func NewClothingRepository(pg *postgres.Postgres) *ClothingRepository {
 }
 
 func (cr *ClothingRepository) GetItemByID(ctx context.Context, id uuid.UUID) (*entity.Catalog, error) {
-	sqlReq, args, err := cr.Builder.
-		Select("id", "name", "category_id", "gender", "season_id", "formality_level", "material", "image_url", "created_at", "updated_at", "is_deleted").
-		From("catalog").
-		Where("id = ? AND is_deleted = false", id).
-		ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build query: %w", err)
-	}
-
-	row, err := cr.Pool.Query(ctx, sqlReq, args...)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("item not found")
-		}
-		return nil, fmt.Errorf("failed to execute query: %w", err)
-	}
+	sqlReq := `
+		SELECT
+			c.id,
+			c.name,
+			ca.name AS category,
+			c.category_id,
+			c.gender,
+			c.season_id,
+			s.name  AS season,
+			c.formality_level,
+			c.material,
+			c.image_url,
+			c.created_at,
+			c.updated_at,
+			c.is_deleted,
+			ARRAY_AGG(DISTINCT col.name) FILTER (WHERE col.name IS NOT NULL) AS colors,
+			ARRAY_AGG(DISTINCT st.name)  FILTER (WHERE st.name  IS NOT NULL) AS styles
+		FROM catalog c
+				 LEFT JOIN season   s   ON s.id   = c.season_id
+				 LEFT JOIN category ca  ON ca.id  = c.category_id
+				 LEFT JOIN color_catalog cc  ON cc.catalog_id = c.id
+				 LEFT JOIN color_types   col ON col.id         = cc.color_id
+				 LEFT JOIN style_catalog sc  ON sc.catalog_id = c.id
+				 LEFT JOIN style_types        st  ON st.id          = sc.style_id
+		WHERE c.id = $1 AND c.is_deleted = false
+		GROUP BY c.id, ca.name, s.name
+    `
 
 	var item entity.Catalog
-	item, err = pgx.CollectOneRow(row, pgx.RowToStructByName[entity.Catalog])
+	err := cr.Pool.QueryRow(ctx, sqlReq, id).Scan(
+		&item.ID,
+		&item.Name,
+		&item.Category,
+		&item.CategoryID,
+		&item.Gender,
+		&item.SeasonID,
+		&item.Season,
+		&item.FormalityLevel,
+		&item.Material,
+		&item.ImageURL,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+		&item.IsDeleted,
+		&item.Colors,
+		&item.Styles,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, DataBase.ErrCatalogItemNotFound
@@ -51,28 +78,64 @@ func (cr *ClothingRepository) GetItemByID(ctx context.Context, id uuid.UUID) (*e
 	return new(item), nil
 }
 
-func (cr *ClothingRepository) CreateItem(ctx context.Context, item *entity.Catalog) (*entity.Catalog, error) {
+func (cr *ClothingRepository) CreateItem(ctx context.Context, req *entity.CreateCatalogRequest) (*entity.Catalog, error) {
 	var created entity.Catalog
 
 	if err := postgres.WithTx(ctx, cr.Pool, func(tx pgx.Tx) error {
-		sqlReq, args, err := cr.Builder.
-			Insert("catalog").
-			Columns("name", "category_id", "gender", "season_id", "formality_level", "material", "image_url").
-			Values(item.Name, item.CategoryID, item.Gender, item.SeasonID, item.FormalityLevel, item.Material, item.ImageURL).
-			Suffix("RETURNING id, name, category_id, gender, season_id, formality_level, material, image_url, created_at, updated_at, is_deleted").
-			ToSql()
+		// 1. вставляем основную запись
+		err := tx.QueryRow(ctx, `
+            INSERT INTO catalog (name, category_id, gender, season_id, formality_level, material, image_url)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, category_id, gender, season_id, formality_level, material, image_url, created_at, updated_at, is_deleted
+        `, req.Name, req.CategoryID, req.Gender, req.SeasonID, req.FormalityLevel, req.Material, req.ImageURL).Scan(
+			&created.ID,
+			&created.Name,
+			&created.CategoryID,
+			&created.Gender,
+			&created.SeasonID,
+			&created.FormalityLevel,
+			&created.Material,
+			&created.ImageURL,
+			&created.CreatedAt,
+			&created.UpdatedAt,
+			&created.IsDeleted,
+		)
 		if err != nil {
-			return fmt.Errorf("failed to build query: %w", err)
+			return fmt.Errorf("failed to insert catalog item: %w", err)
 		}
 
-		row, err := tx.Query(ctx, sqlReq, args...)
-		if err != nil {
-			return fmt.Errorf("failed to execute query: %w", err)
+		if len(req.ColorIDs) > 0 {
+			colorInsert := cr.Builder.
+				Insert("color_catalog").
+				Columns("catalog_id", "color_id")
+			for _, colorID := range req.ColorIDs {
+				colorInsert = colorInsert.Values(created.ID, colorID)
+			}
+			sqlReq, args, err := colorInsert.ToSql()
+			if err != nil {
+				return fmt.Errorf("failed to build colors query: %w", err)
+			}
+			if _, err = tx.Exec(ctx, sqlReq, args...); err != nil {
+				return fmt.Errorf("failed to insert colors: %w", err)
+			}
+		} else {
+			return DataBase.ErrNoColors
 		}
 
-		created, err = pgx.CollectOneRow(row, pgx.RowToStructByName[entity.Catalog])
-		if err != nil {
-			return fmt.Errorf("failed to collect item: %w", err)
+		if len(req.StyleIDs) > 0 {
+			styleInsert := cr.Builder.Insert("style_catalog").Columns("catalog_id", "style_id")
+			for _, styleID := range req.StyleIDs {
+				styleInsert = styleInsert.Values(created.ID, styleID)
+			}
+			sqlReq, args, err := styleInsert.ToSql()
+			if err != nil {
+				return fmt.Errorf("failed to build styles query: %w", err)
+			}
+			if _, err = tx.Exec(ctx, sqlReq, args...); err != nil {
+				return fmt.Errorf("failed to insert styles: %w", err)
+			}
+		} else {
+			return DataBase.ErrNoStyles
 		}
 
 		return nil
@@ -80,36 +143,60 @@ func (cr *ClothingRepository) CreateItem(ctx context.Context, item *entity.Catal
 		return nil, fmt.Errorf("failed to create catalog item: %w", err)
 	}
 
-	return new(created), nil
+	return &created, nil
 }
 
-func (cr *ClothingRepository) UpdateItem(ctx context.Context, item *entity.Catalog) (*entity.Catalog, error) {
+func (cr *ClothingRepository) UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest) (*entity.Catalog, error) {
 	var updated entity.Catalog
 
 	if err := postgres.WithTx(ctx, cr.Pool, func(tx pgx.Tx) error {
-		sqlReq, args, err := cr.Builder.
+		// обновляем основную запись
+		q := cr.Builder.
 			Update("catalog").
-			Set("name", item.Name).
-			Set("category_id", item.CategoryID).
-			Set("gender", item.Gender).
-			Set("season_id", item.SeasonID).
-			Set("formality_level", item.FormalityLevel).
-			Set("material", item.Material).
-			Set("image_url", item.ImageURL).
 			Set("updated_at", squirrel.Expr("NOW()")).
-			Where("id = ? AND is_deleted = false", item.ID).
-			Suffix("RETURNING id, name, category_id, gender, season_id, formality_level, material, image_url, created_at, updated_at, is_deleted").
-			ToSql()
+			Where("id = ? AND is_deleted = false", req.ID).
+			Suffix("RETURNING id, name, category_id, gender, season_id, formality_level, material, image_url, created_at, updated_at, is_deleted")
+
+		if req.Name != "" {
+			q = q.Set("name", req.Name)
+		}
+		if req.Gender != nil {
+			q = q.Set("gender", req.Gender)
+		}
+		if req.FormalityLevel != nil {
+			q = q.Set("formality_level", req.FormalityLevel)
+		}
+		if req.Material != nil {
+			q = q.Set("material", req.Material)
+		}
+		if req.ImageURL != "" {
+			q = q.Set("image_url", req.ImageURL)
+		}
+		if req.CategoryID != 0 {
+			q = q.Set("category_id", req.CategoryID)
+		}
+		if req.SeasonID != 0 {
+			q = q.Set("season_id", req.SeasonID)
+		}
+
+		sqlReq, args, err := q.ToSql()
 		if err != nil {
 			return fmt.Errorf("failed to build query: %w", err)
 		}
 
-		row, err := tx.Query(ctx, sqlReq, args...)
-		if err != nil {
-			return fmt.Errorf("failed to execute query: %w", err)
-		}
-
-		updated, err = pgx.CollectOneRow(row, pgx.RowToStructByName[entity.Catalog])
+		err = tx.QueryRow(ctx, sqlReq, args...).Scan(
+			&updated.ID,
+			&updated.Name,
+			&updated.CategoryID,
+			&updated.Gender,
+			&updated.SeasonID,
+			&updated.FormalityLevel,
+			&updated.Material,
+			&updated.ImageURL,
+			&updated.CreatedAt,
+			&updated.UpdatedAt,
+			&updated.IsDeleted,
+		)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return DataBase.ErrCatalogItemNotFound
@@ -117,12 +204,54 @@ func (cr *ClothingRepository) UpdateItem(ctx context.Context, item *entity.Catal
 			return fmt.Errorf("failed to collect item: %w", err)
 		}
 
+		// цвета только если переданы в запросе
+		if len(req.ColorIDs) > 0 {
+			if _, err = tx.Exec(ctx, `DELETE FROM color_catalog WHERE catalog_id = $1`, req.ID); err != nil {
+				return fmt.Errorf("failed to delete colors: %w", err)
+			}
+
+			colorInsert := cr.Builder.
+				Insert("color_catalog").
+				Columns("catalog_id", "color_id")
+			for _, colorID := range req.ColorIDs {
+				colorInsert = colorInsert.Values(updated.ID, colorID)
+			}
+			sqlReq, args, err := colorInsert.ToSql()
+			if err != nil {
+				return fmt.Errorf("failed to build colors query: %w", err)
+			}
+			if _, err = tx.Exec(ctx, sqlReq, args...); err != nil {
+				return fmt.Errorf("failed to insert colors: %w", err)
+			}
+		}
+
+		// стили только если переданы в запросе
+		if len(req.StyleIDs) > 0 {
+			if _, err = tx.Exec(ctx, `DELETE FROM style_catalog WHERE catalog_id = $1`, req.ID); err != nil {
+				return fmt.Errorf("failed to delete styles: %w", err)
+			}
+
+			styleInsert := cr.Builder.
+				Insert("style_catalog").
+				Columns("catalog_id", "style_id")
+			for _, styleID := range req.StyleIDs {
+				styleInsert = styleInsert.Values(updated.ID, styleID)
+			}
+			sqlReq, args, err := styleInsert.ToSql()
+			if err != nil {
+				return fmt.Errorf("failed to build styles query: %w", err)
+			}
+			if _, err = tx.Exec(ctx, sqlReq, args...); err != nil {
+				return fmt.Errorf("failed to insert styles: %w", err)
+			}
+		}
+
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("failed to update catalog item: %w", err)
 	}
 
-	return new(updated), nil
+	return &updated, nil
 }
 
 func (cr *ClothingRepository) DeleteItem(ctx context.Context, id uuid.UUID) error {

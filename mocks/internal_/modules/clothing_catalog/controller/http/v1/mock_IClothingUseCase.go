@@ -24,29 +24,29 @@ func (_m *IClothingUseCase) EXPECT() *IClothingUseCase_Expecter {
 	return &IClothingUseCase_Expecter{mock: &_m.Mock}
 }
 
-// CreateItem provides a mock function with given fields: ctx, item
-func (_m *IClothingUseCase) CreateItem(ctx context.Context, item *entity.Catalog) (uuid.UUID, error) {
-	ret := _m.Called(ctx, item)
+// CreateItem provides a mock function with given fields: ctx, req, fileName, imageData
+func (_m *IClothingUseCase) CreateItem(ctx context.Context, req *entity.CreateCatalogRequest, fileName string, imageData []byte) (*entity.Catalog, error) {
+	ret := _m.Called(ctx, req, fileName, imageData)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateItem")
 	}
 
-	var r0 uuid.UUID
+	var r0 *entity.Catalog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) (uuid.UUID, error)); ok {
-		return rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.CreateCatalogRequest, string, []byte) (*entity.Catalog, error)); ok {
+		return rf(ctx, req, fileName, imageData)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) uuid.UUID); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.CreateCatalogRequest, string, []byte) *entity.Catalog); ok {
+		r0 = rf(ctx, req, fileName, imageData)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(uuid.UUID)
+			r0 = ret.Get(0).(*entity.Catalog)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *entity.Catalog) error); ok {
-		r1 = rf(ctx, item)
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.CreateCatalogRequest, string, []byte) error); ok {
+		r1 = rf(ctx, req, fileName, imageData)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,24 +61,26 @@ type IClothingUseCase_CreateItem_Call struct {
 
 // CreateItem is a helper method to define mock.On call
 //   - ctx context.Context
-//   - item *entity.Catalog
-func (_e *IClothingUseCase_Expecter) CreateItem(ctx interface{}, item interface{}) *IClothingUseCase_CreateItem_Call {
-	return &IClothingUseCase_CreateItem_Call{Call: _e.mock.On("CreateItem", ctx, item)}
+//   - req *entity.CreateCatalogRequest
+//   - fileName string
+//   - imageData []byte
+func (_e *IClothingUseCase_Expecter) CreateItem(ctx interface{}, req interface{}, fileName interface{}, imageData interface{}) *IClothingUseCase_CreateItem_Call {
+	return &IClothingUseCase_CreateItem_Call{Call: _e.mock.On("CreateItem", ctx, req, fileName, imageData)}
 }
 
-func (_c *IClothingUseCase_CreateItem_Call) Run(run func(ctx context.Context, item *entity.Catalog)) *IClothingUseCase_CreateItem_Call {
+func (_c *IClothingUseCase_CreateItem_Call) Run(run func(ctx context.Context, req *entity.CreateCatalogRequest, fileName string, imageData []byte)) *IClothingUseCase_CreateItem_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*entity.Catalog))
+		run(args[0].(context.Context), args[1].(*entity.CreateCatalogRequest), args[2].(string), args[3].([]byte))
 	})
 	return _c
 }
 
-func (_c *IClothingUseCase_CreateItem_Call) Return(_a0 uuid.UUID, _a1 error) *IClothingUseCase_CreateItem_Call {
+func (_c *IClothingUseCase_CreateItem_Call) Return(_a0 *entity.Catalog, _a1 error) *IClothingUseCase_CreateItem_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *IClothingUseCase_CreateItem_Call) RunAndReturn(run func(context.Context, *entity.Catalog) (uuid.UUID, error)) *IClothingUseCase_CreateItem_Call {
+func (_c *IClothingUseCase_CreateItem_Call) RunAndReturn(run func(context.Context, *entity.CreateCatalogRequest, string, []byte) (*entity.Catalog, error)) *IClothingUseCase_CreateItem_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -189,29 +191,29 @@ func (_c *IClothingUseCase_GetItemByID_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// UpdateItem provides a mock function with given fields: ctx, item
-func (_m *IClothingUseCase) UpdateItem(ctx context.Context, item *entity.Catalog) (uuid.UUID, error) {
-	ret := _m.Called(ctx, item)
+// UpdateItem provides a mock function with given fields: ctx, req, fileName, imageData
+func (_m *IClothingUseCase) UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest, fileName string, imageData []byte) (*entity.Catalog, error) {
+	ret := _m.Called(ctx, req, fileName, imageData)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateItem")
 	}
 
-	var r0 uuid.UUID
+	var r0 *entity.Catalog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) (uuid.UUID, error)); ok {
-		return rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.UpdateCatalogRequest, string, []byte) (*entity.Catalog, error)); ok {
+		return rf(ctx, req, fileName, imageData)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) uuid.UUID); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.UpdateCatalogRequest, string, []byte) *entity.Catalog); ok {
+		r0 = rf(ctx, req, fileName, imageData)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(uuid.UUID)
+			r0 = ret.Get(0).(*entity.Catalog)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *entity.Catalog) error); ok {
-		r1 = rf(ctx, item)
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.UpdateCatalogRequest, string, []byte) error); ok {
+		r1 = rf(ctx, req, fileName, imageData)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -226,24 +228,26 @@ type IClothingUseCase_UpdateItem_Call struct {
 
 // UpdateItem is a helper method to define mock.On call
 //   - ctx context.Context
-//   - item *entity.Catalog
-func (_e *IClothingUseCase_Expecter) UpdateItem(ctx interface{}, item interface{}) *IClothingUseCase_UpdateItem_Call {
-	return &IClothingUseCase_UpdateItem_Call{Call: _e.mock.On("UpdateItem", ctx, item)}
+//   - req *entity.UpdateCatalogRequest
+//   - fileName string
+//   - imageData []byte
+func (_e *IClothingUseCase_Expecter) UpdateItem(ctx interface{}, req interface{}, fileName interface{}, imageData interface{}) *IClothingUseCase_UpdateItem_Call {
+	return &IClothingUseCase_UpdateItem_Call{Call: _e.mock.On("UpdateItem", ctx, req, fileName, imageData)}
 }
 
-func (_c *IClothingUseCase_UpdateItem_Call) Run(run func(ctx context.Context, item *entity.Catalog)) *IClothingUseCase_UpdateItem_Call {
+func (_c *IClothingUseCase_UpdateItem_Call) Run(run func(ctx context.Context, req *entity.UpdateCatalogRequest, fileName string, imageData []byte)) *IClothingUseCase_UpdateItem_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*entity.Catalog))
+		run(args[0].(context.Context), args[1].(*entity.UpdateCatalogRequest), args[2].(string), args[3].([]byte))
 	})
 	return _c
 }
 
-func (_c *IClothingUseCase_UpdateItem_Call) Return(_a0 uuid.UUID, _a1 error) *IClothingUseCase_UpdateItem_Call {
+func (_c *IClothingUseCase_UpdateItem_Call) Return(_a0 *entity.Catalog, _a1 error) *IClothingUseCase_UpdateItem_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *IClothingUseCase_UpdateItem_Call) RunAndReturn(run func(context.Context, *entity.Catalog) (uuid.UUID, error)) *IClothingUseCase_UpdateItem_Call {
+func (_c *IClothingUseCase_UpdateItem_Call) RunAndReturn(run func(context.Context, *entity.UpdateCatalogRequest, string, []byte) (*entity.Catalog, error)) *IClothingUseCase_UpdateItem_Call {
 	_c.Call.Return(run)
 	return _c
 }

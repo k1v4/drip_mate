@@ -24,9 +24,9 @@ func (_m *IClothingRepository) EXPECT() *IClothingRepository_Expecter {
 	return &IClothingRepository_Expecter{mock: &_m.Mock}
 }
 
-// CreateItem provides a mock function with given fields: ctx, item
-func (_m *IClothingRepository) CreateItem(ctx context.Context, item *entity.Catalog) (*entity.Catalog, error) {
-	ret := _m.Called(ctx, item)
+// CreateItem provides a mock function with given fields: ctx, req
+func (_m *IClothingRepository) CreateItem(ctx context.Context, req *entity.CreateCatalogRequest) (*entity.Catalog, error) {
+	ret := _m.Called(ctx, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateItem")
@@ -34,19 +34,19 @@ func (_m *IClothingRepository) CreateItem(ctx context.Context, item *entity.Cata
 
 	var r0 *entity.Catalog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) (*entity.Catalog, error)); ok {
-		return rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.CreateCatalogRequest) (*entity.Catalog, error)); ok {
+		return rf(ctx, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) *entity.Catalog); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.CreateCatalogRequest) *entity.Catalog); ok {
+		r0 = rf(ctx, req)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.Catalog)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *entity.Catalog) error); ok {
-		r1 = rf(ctx, item)
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.CreateCatalogRequest) error); ok {
+		r1 = rf(ctx, req)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,14 +61,14 @@ type IClothingRepository_CreateItem_Call struct {
 
 // CreateItem is a helper method to define mock.On call
 //   - ctx context.Context
-//   - item *entity.Catalog
-func (_e *IClothingRepository_Expecter) CreateItem(ctx interface{}, item interface{}) *IClothingRepository_CreateItem_Call {
-	return &IClothingRepository_CreateItem_Call{Call: _e.mock.On("CreateItem", ctx, item)}
+//   - req *entity.CreateCatalogRequest
+func (_e *IClothingRepository_Expecter) CreateItem(ctx interface{}, req interface{}) *IClothingRepository_CreateItem_Call {
+	return &IClothingRepository_CreateItem_Call{Call: _e.mock.On("CreateItem", ctx, req)}
 }
 
-func (_c *IClothingRepository_CreateItem_Call) Run(run func(ctx context.Context, item *entity.Catalog)) *IClothingRepository_CreateItem_Call {
+func (_c *IClothingRepository_CreateItem_Call) Run(run func(ctx context.Context, req *entity.CreateCatalogRequest)) *IClothingRepository_CreateItem_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*entity.Catalog))
+		run(args[0].(context.Context), args[1].(*entity.CreateCatalogRequest))
 	})
 	return _c
 }
@@ -78,7 +78,7 @@ func (_c *IClothingRepository_CreateItem_Call) Return(_a0 *entity.Catalog, _a1 e
 	return _c
 }
 
-func (_c *IClothingRepository_CreateItem_Call) RunAndReturn(run func(context.Context, *entity.Catalog) (*entity.Catalog, error)) *IClothingRepository_CreateItem_Call {
+func (_c *IClothingRepository_CreateItem_Call) RunAndReturn(run func(context.Context, *entity.CreateCatalogRequest) (*entity.Catalog, error)) *IClothingRepository_CreateItem_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -189,9 +189,9 @@ func (_c *IClothingRepository_GetItemByID_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// UpdateItem provides a mock function with given fields: ctx, item
-func (_m *IClothingRepository) UpdateItem(ctx context.Context, item *entity.Catalog) (*entity.Catalog, error) {
-	ret := _m.Called(ctx, item)
+// UpdateItem provides a mock function with given fields: ctx, req
+func (_m *IClothingRepository) UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest) (*entity.Catalog, error) {
+	ret := _m.Called(ctx, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateItem")
@@ -199,19 +199,19 @@ func (_m *IClothingRepository) UpdateItem(ctx context.Context, item *entity.Cata
 
 	var r0 *entity.Catalog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) (*entity.Catalog, error)); ok {
-		return rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.UpdateCatalogRequest) (*entity.Catalog, error)); ok {
+		return rf(ctx, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.Catalog) *entity.Catalog); ok {
-		r0 = rf(ctx, item)
+	if rf, ok := ret.Get(0).(func(context.Context, *entity.UpdateCatalogRequest) *entity.Catalog); ok {
+		r0 = rf(ctx, req)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.Catalog)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *entity.Catalog) error); ok {
-		r1 = rf(ctx, item)
+	if rf, ok := ret.Get(1).(func(context.Context, *entity.UpdateCatalogRequest) error); ok {
+		r1 = rf(ctx, req)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -226,14 +226,14 @@ type IClothingRepository_UpdateItem_Call struct {
 
 // UpdateItem is a helper method to define mock.On call
 //   - ctx context.Context
-//   - item *entity.Catalog
-func (_e *IClothingRepository_Expecter) UpdateItem(ctx interface{}, item interface{}) *IClothingRepository_UpdateItem_Call {
-	return &IClothingRepository_UpdateItem_Call{Call: _e.mock.On("UpdateItem", ctx, item)}
+//   - req *entity.UpdateCatalogRequest
+func (_e *IClothingRepository_Expecter) UpdateItem(ctx interface{}, req interface{}) *IClothingRepository_UpdateItem_Call {
+	return &IClothingRepository_UpdateItem_Call{Call: _e.mock.On("UpdateItem", ctx, req)}
 }
 
-func (_c *IClothingRepository_UpdateItem_Call) Run(run func(ctx context.Context, item *entity.Catalog)) *IClothingRepository_UpdateItem_Call {
+func (_c *IClothingRepository_UpdateItem_Call) Run(run func(ctx context.Context, req *entity.UpdateCatalogRequest)) *IClothingRepository_UpdateItem_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*entity.Catalog))
+		run(args[0].(context.Context), args[1].(*entity.UpdateCatalogRequest))
 	})
 	return _c
 }
@@ -243,7 +243,7 @@ func (_c *IClothingRepository_UpdateItem_Call) Return(_a0 *entity.Catalog, _a1 e
 	return _c
 }
 
-func (_c *IClothingRepository_UpdateItem_Call) RunAndReturn(run func(context.Context, *entity.Catalog) (*entity.Catalog, error)) *IClothingRepository_UpdateItem_Call {
+func (_c *IClothingRepository_UpdateItem_Call) RunAndReturn(run func(context.Context, *entity.UpdateCatalogRequest) (*entity.Catalog, error)) *IClothingRepository_UpdateItem_Call {
 	_c.Call.Return(run)
 	return _c
 }

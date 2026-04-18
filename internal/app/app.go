@@ -14,6 +14,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/k1v4/drip_mate/pkg/auth/argon"
+	"github.com/k1v4/drip_mate/pkg/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -75,6 +76,7 @@ func Run() {
 	minioClient, err := minio.New(cfg.ObjectStorage.EndPoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.ObjectStorage.AccessKeyID, cfg.ObjectStorage.SecretAccessKey, ""),
 		Secure: true,
+		Region: "ru-7",
 	})
 	if err != nil {
 		serviceLogger.Error(ctx, fmt.Sprintf("create minio client error: %v", err))
@@ -110,11 +112,12 @@ func Run() {
 	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, new(cfg.Token), hasher)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
-	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo)
+	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
 	e := echo.New()
+	e.Validator = validator.New()
 	e.HideBanner = true
 	e.HTTPErrorHandler = makeHTTPErrorHandler(serviceLogger)
 	router.NewRouter(e, serviceLogger, authUseCase, catalogUseCase, cfg)
