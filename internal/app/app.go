@@ -21,15 +21,20 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	repositoryCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/repository"
+	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
+	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
+
+	serviceCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/usecase"
+	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
+	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
+	serviceUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
+
+	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
+	grpcTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
+
 	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service"
-	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
-	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
-	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
-	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
-	grpcTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
-	serviceUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
-	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
 	"github.com/k1v4/drip_mate/internal/router"
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
 	"github.com/k1v4/drip_mate/pkg/adapter"
@@ -100,17 +105,19 @@ func Run() {
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
+	catalogRepo := repositoryCatalog.NewClothingRepository(pg)
 
 	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, new(cfg.Token), hasher)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
+	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
 	e := echo.New()
 	e.HideBanner = true
 	e.HTTPErrorHandler = makeHTTPErrorHandler(serviceLogger)
-	router.NewRouter(e, serviceLogger, authUseCase, cfg)
+	router.NewRouter(e, serviceLogger, authUseCase, catalogUseCase, cfg)
 
 	httpServer := httpserver.New(e, httpserver.Port(strconv.Itoa(cfg.Server.RestPort)))
 	grpcServer, err := grpcTransport.NewServer(ctx, cfg.Server.GRPCPort, uploadService)

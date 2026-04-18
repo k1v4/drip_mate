@@ -12,7 +12,6 @@ import (
 )
 
 func ExtractToken(c echo.Context) string {
-	// сначала пробуем куку
 	cookie, err := c.Cookie("access_token")
 	if err != nil {
 		return ""

@@ -8,8 +8,8 @@ import (
 	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
+	middlewareJWT "github.com/k1v4/drip_mate/internal/router/middleware"
 	"github.com/k1v4/drip_mate/pkg/logger"
-	middleware2 "github.com/k1v4/drip_mate/pkg/middleware"
 	"github.com/labstack/echo/v4"
 )
 
@@ -29,10 +29,10 @@ func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, c
 	handler.POST("/register", r.Register)
 
 	// PUT /api/v1/users
-	handler.PUT("/users", r.UpdateUserInfo, middleware2.JWTAuth(cfg))
+	handler.PUT("/users", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
 
 	// DELETE  /api/v1/users
-	handler.DELETE("/users", r.DeleteAccount, middleware2.JWTAuth(cfg))
+	handler.DELETE("/users", r.DeleteAccount, middlewareJWT.JWTAuth(cfg))
 }
 
 func (r *containerRoutes) Auth(c echo.Context) error {
@@ -133,7 +133,7 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	userID := c.Get(middleware2.UserIDKey).(string)
+	userID := c.Get(middlewareJWT.UserIDKey).(string)
 
 	u := new(entity.UpdateUserRequest)
 	if err := c.Bind(u); err != nil {
@@ -162,7 +162,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	const op = "controller.DeleteAccount"
 	ctx := c.Request().Context()
 
-	userID := c.Get(middleware2.UserIDKey).(string)
+	userID := c.Get(middlewareJWT.UserIDKey).(string)
 
 	isSucceed, err := r.t.DeleteAccount(ctx, userID)
 	if err != nil {

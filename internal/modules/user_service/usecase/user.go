@@ -41,7 +41,7 @@ func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *ka
 
 // Login checks is user already register and sent access-token
 // if user is not exist, Login will return error
-func (s *AuthUseCase) Login(ctx context.Context, email string, password string) (int, string, error) {
+func (s *AuthUseCase) Login(ctx context.Context, email string, password string) (entity.Role, string, error) {
 	const op = "service.Login"
 
 	user, err := s.repo.GetUser(ctx, email)
@@ -90,7 +90,7 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password string) (str
 
 	tokenAccess, err := jwtpkg.NewAccessToken(&userEntity.User{
 		ID:            id,
-		AccessLevelId: accessID,
+		AccessLevelId: entity.Role(accessID),
 	}, s.cfg.TTL, s.cfg.Secret, s.cfg.Issuer)
 	if err != nil {
 		return "", "", fmt.Errorf("%s: %w", op, err)

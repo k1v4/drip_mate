@@ -1,5 +1,7 @@
 package entity
 
+import "github.com/k1v4/drip_mate/internal/entity"
+
 type RegisterRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -16,7 +18,7 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessId int `json:"access_id"`
+	AccessId entity.Role `json:"access_id"`
 }
 
 type IsAdminRequest struct {
