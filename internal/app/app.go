@@ -13,7 +13,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/pkg/auth/argon"
+	"github.com/k1v4/drip_mate/pkg/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -21,15 +23,20 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	repositoryCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/repository"
+	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
+	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
+
+	serviceCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/usecase"
+	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
+	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
+	serviceUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
+
+	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
+	grpcTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
+
 	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service"
-	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
-	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
-	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
-	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
-	grpcTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
-	serviceUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
-	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
 	"github.com/k1v4/drip_mate/internal/router"
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
 	"github.com/k1v4/drip_mate/pkg/adapter"
@@ -70,6 +77,7 @@ func Run() {
 	minioClient, err := minio.New(cfg.ObjectStorage.EndPoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.ObjectStorage.AccessKeyID, cfg.ObjectStorage.SecretAccessKey, ""),
 		Secure: true,
+		Region: "ru-7",
 	})
 	if err != nil {
 		serviceLogger.Error(ctx, fmt.Sprintf("create minio client error: %v", err))
@@ -83,34 +91,55 @@ func Run() {
 		return
 	}
 
-	kafkaProducer := kafkaPkg.NewProducer([]string{cfg.Kafka.Brokers}, cfg.Kafka.Topic)
-	if kafkaProducer == nil {
+	kafkaProducerNotifications := kafkaPkg.NewProducer[entity.NotificationEvent]([]string{cfg.Kafka.Brokers}, cfg.Kafka.TopicNotification)
+	if kafkaProducerNotifications == nil {
 		serviceLogger.Error(ctx, fmt.Sprintf("create kafka producer error: %v", err))
 		return
 	}
 	defer func() {
-		err := kafkaProducer.Close()
+		err := kafkaProducerNotifications.Close()
 		if err != nil {
 			serviceLogger.Error(ctx, fmt.Sprintf("close kafka producer error: %v", err))
 		}
 	}()
+
+	kafkaProducerCatalog := kafkaPkg.NewProducer[entity.CatalogEvent]([]string{cfg.Kafka.Brokers}, cfg.Kafka.TopicCatalog)
+	if kafkaProducerCatalog == nil {
+		serviceLogger.Error(ctx, fmt.Sprintf("create kafka producer error: %v", err))
+		return
+	}
+	defer func() {
+		err := kafkaProducerCatalog.Close()
+		if err != nil {
+			serviceLogger.Error(ctx, fmt.Sprintf("close kafka producer error: %v", err))
+		}
+	}()
+
+	if err = ensureTopics(ctx, cfg.Kafka.Brokers, cfg.Kafka.TopicNotification, cfg.Kafka.TopicCatalog); err != nil {
+		serviceLogger.Error(ctx, fmt.Sprintf("ensure kafka topics: %v", err))
+		return
+	}
+	serviceLogger.Info(ctx, "kafka topics ensured")
 
 	hasher := argon.NewArgon2Hasher(argon.DefaultParams(), cfg.Hasher.Pepper)
 	email := adapter.NewGoMailClient(cfg.SMTP)
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
+	catalogRepo := repositoryCatalog.NewClothingRepository(pg)
 
-	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducer, new(cfg.Token), hasher)
+	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducerNotifications, new(cfg.Token), hasher)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
+	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService, kafkaProducerCatalog, serviceLogger)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
 	e := echo.New()
+	e.Validator = validator.New()
 	e.HideBanner = true
 	e.HTTPErrorHandler = makeHTTPErrorHandler(serviceLogger)
-	router.NewRouter(e, serviceLogger, authUseCase, cfg)
+	router.NewRouter(e, serviceLogger, authUseCase, catalogUseCase, cfg)
 
 	httpServer := httpserver.New(e, httpserver.Port(strconv.Itoa(cfg.Server.RestPort)))
 	grpcServer, err := grpcTransport.NewServer(ctx, cfg.Server.GRPCPort, uploadService)
@@ -118,20 +147,21 @@ func Run() {
 		serviceLogger.Error(ctx, fmt.Sprintf("create grpc server error: %v", err))
 		return
 	}
-	kafkaReader := kafka.NewReader(kafka.ReaderConfig{
+	kafkaReaderNotifications := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        []string{cfg.Kafka.Brokers},
-		Topic:          cfg.Kafka.Topic,
+		Topic:          cfg.Kafka.TopicNotification,
 		GroupID:        cfg.Kafka.GroupID,
 		CommitInterval: 0,
 		StartOffset:    kafka.FirstOffset,
 	})
 
 	// создаём consumer
-	kafkaConsumer := kafkaPkg.NewConsumer(kafkaReader, notifController, kafkaProducer, serviceLogger)
-	if kafkaConsumer == nil {
-		serviceLogger.Error(ctx, fmt.Sprintf("create kafka consumer error: %v", err))
-		return
-	}
+	kafkaConsumerNotification := kafkaPkg.NewConsumer[entity.NotificationEvent](
+		kafkaReaderNotifications,
+		kafkaProducerNotifications,
+		notifController.Handle,
+		serviceLogger,
+	)
 
 	// Запускаем оба сервера параллельно через errgroup
 	eg, egCtx := errgroup.WithContext(ctx)
@@ -139,7 +169,7 @@ func Run() {
 	// запускаем в errgroup
 	eg.Go(func() error {
 		serviceLogger.Info(ctx, "kafka consumer starting")
-		if err := kafkaConsumer.Run(egCtx); err != nil {
+		if err := kafkaConsumerNotification.Run(egCtx); err != nil {
 			return fmt.Errorf("kafka consumer: %w", err)
 		}
 		return nil
@@ -207,4 +237,45 @@ func makeHTTPErrorHandler(l logger.Logger) echo.HTTPErrorHandler {
 			_ = c.JSON(he.Code, echo.Map{"error": he.Message})
 		}
 	}
+}
+
+func ensureTopics(ctx context.Context, broker string, topics ...string) error {
+	conn, err := kafka.DialContext(ctx, "tcp", broker)
+	if err != nil {
+		return fmt.Errorf("dial kafka: %w", err)
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	controller, err := conn.Controller()
+	if err != nil {
+		return fmt.Errorf("get controller: %w", err)
+	}
+
+	controllerConn, err := kafka.DialContext(ctx, "tcp", fmt.Sprintf("%s:%d", controller.Host, controller.Port))
+	if err != nil {
+		return fmt.Errorf("dial controller: %w", err)
+	}
+	defer func() {
+		_ = controllerConn.Close()
+	}()
+
+	configs := make([]kafka.TopicConfig, 0, len(topics))
+	for _, topic := range topics {
+		configs = append(configs, kafka.TopicConfig{
+			Topic:             topic,
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		})
+	}
+
+	if err = controllerConn.CreateTopics(configs...); err != nil {
+		// если топик уже существует — не ошибка
+		if !errors.Is(err, kafka.TopicAlreadyExists) {
+			return fmt.Errorf("create topics: %w", err)
+		}
+	}
+
+	return nil
 }

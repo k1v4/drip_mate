@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	totalEntity "github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,7 +13,6 @@ import (
 )
 
 func ExtractToken(c echo.Context) string {
-	// сначала пробуем куку
 	cookie, err := c.Cookie("access_token")
 	if err != nil {
 		return ""
@@ -39,8 +39,7 @@ func NewAccessToken(user *entity.User, duration time.Duration, secret, issuer st
 	return tokenString, nil
 }
 
-func ValidateTokenAndGetUserId(tokenString, secret, issuer string) (string, error) {
-	// парсим токен
+func ValidateTokenAndGetUserId(tokenString, secret, issuer string) (string, totalEntity.Role, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -48,26 +47,29 @@ func ValidateTokenAndGetUserId(tokenString, secret, issuer string) (string, erro
 		return []byte(secret), nil
 	}, jwt.WithIssuer(issuer))
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	// проверяем claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		// извлекаем userId
-		userId, okUser := claims["id"].(string)
-		if !okUser {
-			return "", fmt.Errorf("userId not found in token")
+		userID, ok := claims["id"].(string)
+		if !ok {
+			return "", 0, fmt.Errorf("user_id not found in token")
 		}
 
-		// проверяем срок действия токена
 		if exp, ok := claims["exp"].(float64); ok {
 			if time.Now().Unix() > int64(exp) {
-				return "", fmt.Errorf("token expired")
+				return "", 0, fmt.Errorf("token expired")
 			}
 		}
 
-		return userId, nil
+		// access_level_id в JWT хранится как float64
+		accessLevel, ok := claims["access_level_id"].(float64)
+		if !ok {
+			return "", 0, fmt.Errorf("access_level_id not found in token")
+		}
+
+		return userID, totalEntity.Role(accessLevel), nil
 	}
 
-	return "", errors.New("invalid token")
+	return "", 0, errors.New("invalid token")
 }

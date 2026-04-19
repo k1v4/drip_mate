@@ -12,8 +12,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 type AuthRepository struct {
@@ -36,7 +35,7 @@ func (a *AuthRepository) SaveUser(
 
 	var id string
 	var accessID int
-	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
+	err := postgres.WithTx(ctx, a.Pool, func(tx pgx.Tx) error {
 		sqlReq, args, err := a.Builder.
 			Insert("users").
 			Columns("email", "password").
@@ -214,7 +213,7 @@ func (a *AuthRepository) GetUserById(ctx context.Context, id string) (entity.Use
 func (a *AuthRepository) DeleteUser(ctx context.Context, id string) error {
 	const op = "repository.DeleteUser"
 
-	if err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
+	if err := postgres.WithTx(ctx, a.Pool, func(tx pgx.Tx) error {
 		sqlReq, args, err := a.Builder.
 			Delete("users").
 			Where(sq.Eq{"id": id}).
@@ -238,7 +237,7 @@ func (a *AuthRepository) DeleteUser(ctx context.Context, id string) error {
 func (a *AuthRepository) UpdateUser(ctx context.Context, newUser *entity.User) (string, error) {
 	const op = "repository.UpdateUser"
 
-	err := withTx(ctx, a.Pool, func(tx pgx.Tx) error {
+	err := postgres.WithTx(ctx, a.Pool, func(tx pgx.Tx) error {
 		builder := a.Builder.Update("users")
 
 		if newUser.Email != "" {
@@ -283,25 +282,4 @@ func (a *AuthRepository) UpdateUser(ctx context.Context, newUser *entity.User) (
 	}
 
 	return newUser.ID, nil
-}
-
-func withTx(
-	ctx context.Context,
-	pool *pgxpool.Pool,
-	fn func(tx pgx.Tx) error,
-) error {
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		_ = tx.Rollback(ctx) // безопасно, если Commit уже был
-	}()
-
-	if err := fn(tx); err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
 }
