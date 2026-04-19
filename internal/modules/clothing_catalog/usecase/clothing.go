@@ -64,20 +64,15 @@ func (uc *ClothingCatalogUseCase) CreateItem(ctx context.Context, req *entity.Cr
 		return nil, fmt.Errorf("failed to create item: %w", err)
 	}
 
-	fullItem, err := uc.repoClothing.GetItemByID(ctx, item.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch item: %w", err)
-	}
-
 	err = uc.kafkaProducer.Send(ctx, entity.CatalogEvent{
 		Type:    entity.CatalogCreated,
-		Payload: fullItem,
+		Payload: item.ID,
 	})
 	if err != nil {
 		uc.l.Error(ctx, fmt.Sprintf("failed to send create catalog event to ml: %v", err))
 	}
 
-	return fullItem, nil
+	return item, nil
 }
 
 func (uc *ClothingCatalogUseCase) UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest, fileName string, imageData []byte) (*entity.Catalog, error) {
@@ -111,20 +106,15 @@ func (uc *ClothingCatalogUseCase) UpdateItem(ctx context.Context, req *entity.Up
 		return nil, fmt.Errorf("failed to update item: %w", err)
 	}
 
-	fullItem, err := uc.repoClothing.GetItemByID(ctx, item.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch item: %w", err)
-	}
-
 	err = uc.kafkaProducer.Send(ctx, entity.CatalogEvent{
 		Type:    entity.CatalogUpdated,
-		Payload: fullItem,
+		Payload: item.ID,
 	})
 	if err != nil {
 		uc.l.Error(ctx, fmt.Sprintf("failed to send update catalog event to ml: %v", err))
 	}
 
-	return fullItem, nil
+	return item, nil
 }
 
 func (uc *ClothingCatalogUseCase) DeleteItem(ctx context.Context, id uuid.UUID) error {
@@ -137,7 +127,7 @@ func (uc *ClothingCatalogUseCase) DeleteItem(ctx context.Context, id uuid.UUID) 
 
 	err = uc.kafkaProducer.Send(ctx, entity.CatalogEvent{
 		Type:    entity.CatalogDeleted,
-		Payload: &entity.Catalog{ID: id},
+		Payload: id,
 	})
 	if err != nil {
 		uc.l.Error(ctx, fmt.Sprintf("failed to send delete catalog event to ml: %v", err))

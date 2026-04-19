@@ -60,5 +60,5 @@ var (
 
 type CatalogEvent struct {
 	Type    CatalogType `json:"type"` // "created" | "updated" | "deleted"
-	Payload *Catalog    `json:"payload"`
+	Payload uuid.UUID   `json:"payload"`
 }
