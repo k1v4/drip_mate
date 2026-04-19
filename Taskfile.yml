@@ -19,6 +19,7 @@ tasks:
   all:
     desc: "Tidy, format, lint"
     cmds:
+      - task: generate-mocks
       - task: go-mod
       - task: format
       - task: lint
