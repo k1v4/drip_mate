@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  GO: go
+  GOLANGCI_LINT: golangci-lint
+  MOCKER: mockery
+  GOIMPORTS: goimports
+  COVERAGE_MIN: "70"
+  COVERPKGS:
+    sh: go list ./... | grep -v mocks | grep -v repository | grep -v config | grep -v cmd | paste -sd ',' -
+
+tasks:
+  default:
+    desc: "List all available tasks"
+    cmds:
+      - task --list
+
+  all:
+    desc: "Tidy, format, lint"
+    cmds:
+      - task: go-mod
+      - task: format
+      - task: lint
+
+  go-mod:
+    desc: "go mod tidy"
+    cmds:
+      - "{{.GO}} mod tidy"
+
+  generate-mocks:
+    desc: "Generate mocks via mockery"
+    cmds:
+      - "{{.MOCKER}} --config=mockery.yml"
+
+  format:
+    desc: "Format source code"
+    cmds:
+      - "{{.GO}} fmt ./..."
+      - "{{.GO}} fix ./..."
+      - "{{.GOIMPORTS}} -w ."
+
+  lint:
+    desc: "Run golangci-lint"
+    cmds:
+      - "{{.GOLANGCI_LINT}} run --timeout=5m ./... --fix"
+
+  test:
+    desc: "Run tests with coverage gate (>= {{.COVERAGE_MIN}}%)"
+    vars:
+      COV_OUT: coverage.out
+      COV_HTML: coverage.html
+    cmds:
+      - echo "Running tests with coverage"
+      - "{{.GO}} test ./... -coverpkg={{.COVERPKGS}} -coverprofile={{.COV_OUT}}"
+      - "{{.GO}} tool cover -html={{.COV_OUT}} -o {{.COV_HTML}}"
+      - |
+        coverage=$({{.GO}} tool cover -func={{.COV_OUT}} | grep total | awk '{print substr($3, 1, length($3)-1)}')
+        echo "Total coverage: ${coverage}%"
+        awk "BEGIN { exit !(${coverage} >= {{.COVERAGE_MIN}}) }" || \
+          (echo "Coverage ${coverage}% is below {{.COVERAGE_MIN}}%"; exit 1)
+
+  ci:
+    desc: "Full CI: tidy + format + lint + test"
+    deps: [all]
+    cmds:
+      - task: test
