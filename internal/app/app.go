@@ -25,11 +25,13 @@ import (
 
 	repositoryCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/repository"
 	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
+	repositoryReference "github.com/k1v4/drip_mate/internal/modules/reference_module/repository"
 	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
 
 	serviceCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/usecase"
 	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
+	serviceReference "github.com/k1v4/drip_mate/internal/modules/reference_module/usecase"
 	serviceUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 
 	controllerNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/controller/http/v1"
@@ -127,11 +129,13 @@ func Run() {
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
 	catalogRepo := repositoryCatalog.NewClothingRepository(pg)
+	referencesRepo := repositoryReference.NewReferenceRepository(pg)
 
 	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducerNotifications, new(cfg.Token), hasher)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
 	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService, kafkaProducerCatalog, serviceLogger)
+	referencesUseCase := serviceReference.NewReferenceUseCase(referencesRepo)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
@@ -139,7 +143,7 @@ func Run() {
 	e.Validator = validator.New()
 	e.HideBanner = true
 	e.HTTPErrorHandler = makeHTTPErrorHandler(serviceLogger)
-	router.NewRouter(e, serviceLogger, authUseCase, catalogUseCase, cfg)
+	router.NewRouter(e, serviceLogger, authUseCase, cfg, catalogUseCase, referencesUseCase)
 
 	httpServer := httpserver.New(e, httpserver.Port(strconv.Itoa(cfg.Server.RestPort)))
 	grpcServer, err := grpcTransport.NewServer(ctx, cfg.Server.GRPCPort, uploadService)

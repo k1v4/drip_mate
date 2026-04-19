@@ -5,6 +5,7 @@ import (
 
 	"github.com/k1v4/drip_mate/internal/config"
 	v1catalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/controller/http/v1"
+	v1references "github.com/k1v4/drip_mate/internal/modules/reference_module/controller/http/v1"
 	v1user "github.com/k1v4/drip_mate/internal/modules/user_service/controller/http/v1"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/logger"
@@ -13,7 +14,14 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func NewRouter(handler *echo.Echo, l logger.Logger, t usecase.ISsoService, cl v1catalog.IClothingUseCase, cfg *config.Config) {
+func NewRouter(
+	handler *echo.Echo,
+	l logger.Logger,
+	t usecase.ISsoService,
+	cfg *config.Config,
+	cl v1catalog.IClothingUseCase,
+	ref v1references.IReferenceUseCase,
+) {
 	// Middleware
 	handler.Use(middleware.RequestLogger())
 	handler.Use(middleware.Recover())
@@ -32,5 +40,6 @@ func NewRouter(handler *echo.Echo, l logger.Logger, t usecase.ISsoService, cl v1
 	{
 		v1user.NewSsoRoutes(h, t, l, new(cfg.Token))
 		v1catalog.NewCatalogRoutes(h, cl, l, new(cfg.Token))
+		v1references.NewReferencesRoutes(h, ref, l)
 	}
 }
