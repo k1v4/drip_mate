@@ -25,23 +25,23 @@ func (_m *IRecommendationUseCase) EXPECT() *IRecommendationUseCase_Expecter {
 }
 
 // GetUserRecommendation provides a mock function with given fields: ctx, formality, userID
-func (_m *IRecommendationUseCase) GetUserRecommendation(ctx context.Context, formality int, userID uuid.UUID) ([]entity.OutfitItem, error) {
+func (_m *IRecommendationUseCase) GetUserRecommendation(ctx context.Context, formality int, userID uuid.UUID) ([]entity.Catalog, error) {
 	ret := _m.Called(ctx, formality, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetUserRecommendation")
 	}
 
-	var r0 []entity.OutfitItem
+	var r0 []entity.Catalog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) ([]entity.OutfitItem, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) ([]entity.Catalog, error)); ok {
 		return rf(ctx, formality, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) []entity.OutfitItem); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) []entity.Catalog); ok {
 		r0 = rf(ctx, formality, userID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]entity.OutfitItem)
+			r0 = ret.Get(0).([]entity.Catalog)
 		}
 	}
 
@@ -74,12 +74,12 @@ func (_c *IRecommendationUseCase_GetUserRecommendation_Call) Run(run func(ctx co
 	return _c
 }
 
-func (_c *IRecommendationUseCase_GetUserRecommendation_Call) Return(_a0 []entity.OutfitItem, _a1 error) *IRecommendationUseCase_GetUserRecommendation_Call {
+func (_c *IRecommendationUseCase_GetUserRecommendation_Call) Return(_a0 []entity.Catalog, _a1 error) *IRecommendationUseCase_GetUserRecommendation_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *IRecommendationUseCase_GetUserRecommendation_Call) RunAndReturn(run func(context.Context, int, uuid.UUID) ([]entity.OutfitItem, error)) *IRecommendationUseCase_GetUserRecommendation_Call {
+func (_c *IRecommendationUseCase_GetUserRecommendation_Call) RunAndReturn(run func(context.Context, int, uuid.UUID) ([]entity.Catalog, error)) *IRecommendationUseCase_GetUserRecommendation_Call {
 	_c.Call.Return(run)
 	return _c
 }

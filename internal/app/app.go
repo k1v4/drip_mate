@@ -141,7 +141,7 @@ func Run() {
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
 	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService, kafkaProducerCatalog, serviceLogger)
 	referencesUseCase := serviceReference.NewReferenceUseCase(referencesRepo)
-	recommendationsUseCase := serviceRecommendation.NewRecommendationsUseCase(recommendationRepo, weather, ml)
+	recommendationsUseCase := serviceRecommendation.NewRecommendationsUseCase(recommendationRepo, weather, ml, catalogUseCase, serviceLogger)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 

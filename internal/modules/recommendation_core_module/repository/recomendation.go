@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
-	"github.com/lib/pq"
 )
 
 type RecommendationsRepository struct {
@@ -19,11 +18,11 @@ func NewRecommendationsRepository(pg *postgres.Postgres) *RecommendationsReposit
 }
 
 type userProfileRow struct {
-	Gender      string         `db:"gender"`
-	Styles      pq.StringArray `db:"styles"`
-	Colors      pq.StringArray `db:"colors"`
-	MusicGenres pq.StringArray `db:"music_genres"`
-	City        string         `db:"city"`
+	Gender      string   `db:"gender"`
+	Styles      []string `db:"styles"`
+	Colors      []string `db:"colors"`
+	MusicGenres []string `db:"music_genres"`
+	City        string   `db:"city"`
 }
 
 func (r *RecommendationsRepository) GetUserProfile(ctx context.Context, userID uuid.UUID) (*entity.UserProfile, string, error) {
@@ -56,12 +55,12 @@ func (r *RecommendationsRepository) GetUserProfile(ctx context.Context, userID u
 		return nil, "", fmt.Errorf("get user profile: %w", err)
 	}
 
-	profile := entity.UserProfile{
+	profile := &entity.UserProfile{
 		GenderPref:  row.Gender,
-		Styles:      []string(row.Styles),
-		Colors:      []string(row.Colors),
-		MusicGenres: []string(row.MusicGenres),
+		Styles:      row.Styles,
+		Colors:      row.Colors,
+		MusicGenres: row.MusicGenres,
 	}
 
-	return new(profile), row.City, nil
+	return profile, row.City, nil
 }

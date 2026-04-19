@@ -14,7 +14,7 @@ import (
 )
 
 type IRecommendationUseCase interface {
-	GetUserRecommendation(ctx context.Context, formality int, userID uuid.UUID) ([]entity.OutfitItem, error)
+	GetUserRecommendation(ctx context.Context, formality int, userID uuid.UUID) ([]entity.Catalog, error)
 }
 
 type recommendationsRoutes struct {
