@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 
+	totalEntity "github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 )
 
@@ -15,7 +16,7 @@ type ISsoRepository interface {
 }
 
 type ISsoService interface {
-	Login(ctx context.Context, email string, password string) (int, string, error)
+	Login(ctx context.Context, email string, password string) (totalEntity.Role, string, error)
 	Register(ctx context.Context, email, password string) (string, string, error)
 	DeleteAccount(ctx context.Context, id string) (bool, error)
 	UpdateUserInfo(ctx context.Context, id string, email, password, name, surname, username, city string) (entity.User, error)

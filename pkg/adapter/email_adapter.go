@@ -17,7 +17,10 @@ type GoMailClient struct {
 
 func NewGoMailClient(cfg config.SMTP) *GoMailClient {
 	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.Username, cfg.Password)
-	dialer.TLSConfig = &tls.Config{ServerName: cfg.Host}
+	dialer.SSL = false // для 587 SSL выключаем, используется STARTTLS
+	dialer.TLSConfig = &tls.Config{
+		ServerName: cfg.Host,
+	}
 
 	return &GoMailClient{
 		dialer: dialer,

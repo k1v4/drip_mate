@@ -32,9 +32,10 @@ type Token struct {
 }
 
 type Kafka struct {
-	Brokers string `yaml:"brokers" env:"KAFKA_BROKERS" env-required:"true"`
-	Topic   string `yaml:"topic"   env:"KAFKA_TOPIC"   env-required:"true"`
-	GroupID string `yaml:"group_id" env:"KAFKA_GROUP_ID" env-default:"drip-mate"`
+	Brokers           string `yaml:"brokers" env:"KAFKA_BROKERS" env-required:"true"`
+	TopicNotification string `yaml:"topic_notification"   env:"KAFKA_TOPIC_NOTIFICATION"   env-required:"true"`
+	TopicCatalog      string `yaml:"topic_catalog"   env:"KAFKA_TOPIC_CATALOG"   env-required:"true"`
+	GroupID           string `yaml:"group_id" env:"KAFKA_GROUP_ID" env-default:"drip-mate"`
 }
 
 type SMTP struct {
