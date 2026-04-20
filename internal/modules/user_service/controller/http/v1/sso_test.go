@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	mocksInternal "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
@@ -256,8 +257,8 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			token:     "valid-token",
 			mockReturn: func() {
 				mockSvc.EXPECT().
-					UpdateUserInfo(mock.Anything, 1, "upd@mail.com", "password12345", "John", "Doe", "jdoe", "NY").
-					Return(entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com"}, nil).Once()
+					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe").
+					Return(&entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com"}, nil).Once()
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   `"email":"upd@mail.com"`,
@@ -269,8 +270,8 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			token:     "valid-token",
 			mockReturn: func() {
 				mockSvc.EXPECT().
-					UpdateUserInfo(mock.Anything, 1, "upd@mail.com", "password12345", "John", "Doe", "jdoe", "NY").
-					Return(entity.User{}, errors.New("usecase error")).Once()
+					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe").
+					Return(&entity.User{}, errors.New("usecase error")).Once()
 				mockLogger.EXPECT().Error(mock.Anything, fmt.Sprintf("%s: usecase error", "controller.UpdateUserInfo")).Return().Once()
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -332,7 +333,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			ctx := e.NewContext(req, rec)
 
 			if tc.needToken {
-				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
+				user := entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com", AccessID: 1}
 				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute, "", "")
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
@@ -421,7 +422,7 @@ func TestAuthController_DeleteAccount(t *testing.T) {
 			ctx := e.NewContext(req, rec)
 
 			if tc.needToken {
-				user := entity.User{ID: gofakeit.UUID(), Email: "upd@mail.com", AccessLevelId: 1}
+				user := entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com", AccessID: 1}
 				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute, "", "")
 				req.Header.Set("Authorization", "Bearer "+token)
 			}

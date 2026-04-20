@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 
 	"github.com/stretchr/testify/assert"
@@ -18,21 +19,21 @@ func TestUser_MarshalUnmarshalBinary(t *testing.T) {
 		{
 			name: "all fields filled",
 			user: entity.User{
-				ID:              gofakeit.UUID(),
-				Email:           "test@mail.com",
-				Password:        "secret",
-				Name:            "John",
-				Surname:         "Doe",
-				Username:        "johndoe",
-				City:            "NYC",
-				AccessLevelName: "admin",
-				AccessLevelId:   0, // код не сериализуется
+				ID:          uuid.MustParse(gofakeit.UUID()),
+				Email:       "test@mail.com",
+				Password:    "secret",
+				Name:        "John",
+				Surname:     "Doe",
+				Username:    "johndoe",
+				City:        "NYC",
+				AccessLevel: "admin",
+				AccessID:    0, // код не сериализуется
 			},
 		},
 		{
 			name: "empty optional fields",
 			user: entity.User{
-				ID:    gofakeit.UUID(),
+				ID:    uuid.MustParse(gofakeit.UUID()),
 				Email: "empty@mail.com",
 			},
 		},
@@ -61,8 +62,8 @@ func TestUser_MarshalUnmarshalBinary(t *testing.T) {
 			assert.Equal(t, tc.user.Surname, newUser.Surname)
 			assert.Equal(t, tc.user.Username, newUser.Username)
 			assert.Equal(t, tc.user.City, newUser.City)
-			assert.Equal(t, tc.user.AccessLevelName, newUser.AccessLevelName)
-			assert.Equal(t, tc.user.AccessLevelId, newUser.AccessLevelId)
+			assert.Equal(t, tc.user.AccessLevel, newUser.AccessLevel)
+			assert.Equal(t, tc.user.AccessID, newUser.AccessID)
 		})
 	}
 }

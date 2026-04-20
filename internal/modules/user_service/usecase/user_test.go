@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	mocks "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
 	mocks2 "github.com/k1v4/drip_mate/mocks/pkg/auth"
@@ -253,7 +254,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		{
 			name: "success",
 			inputUser: entity.User{
-				ID:       gofakeit.UUID(),
+				ID:       uuid.MustParse(gofakeit.UUID()),
 				Email:    gofakeit.Email(),
 				Name:     "John",
 				Surname:  "Doe",
@@ -263,7 +264,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 			password: "strong-password",
 			updateID: gofakeit.UUID(),
 			getUser: entity.User{
-				ID:       gofakeit.UUID(),
+				ID:       uuid.MustParse(gofakeit.UUID()),
 				Email:    "john@mail.com",
 				Name:     "John",
 				Surname:  "Doe",
@@ -271,7 +272,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 				City:     "Berlin",
 			},
 			expectedUser: entity.User{
-				ID:       gofakeit.UUID(),
+				ID:       uuid.MustParse(gofakeit.UUID()),
 				Email:    "john@mail.com",
 				Name:     "John",
 				Surname:  "Doe",
@@ -282,7 +283,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		{
 			name: "update repo error",
 			inputUser: entity.User{
-				ID:    gofakeit.UUID(),
+				ID:    uuid.MustParse(gofakeit.UUID()),
 				Email: gofakeit.Email(),
 			},
 			password:      "pass",
@@ -292,7 +293,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		{
 			name: "get user error",
 			inputUser: entity.User{
-				ID:    gofakeit.UUID(),
+				ID:    uuid.MustParse(gofakeit.UUID()),
 				Email: gofakeit.Email(),
 			},
 			password:      "pass",
@@ -309,7 +310,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 
 			mockRepo.
 				EXPECT().
-				UpdateUser(ctx, mock.MatchedBy(func(u entity.User) bool {
+				UpdateUserPersonal(ctx, mock.MatchedBy(func(u entity.User) bool {
 					isP, _ := hasher.Verify(u.Password, tc.password)
 
 					return u.ID == tc.inputUser.ID &&
@@ -322,19 +323,16 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 				mockRepo.
 					EXPECT().
 					GetUserById(ctx, tc.updateID).
-					Return(tc.getUser, tc.getErr).
+					Return(&tc.getUser, tc.getErr).
 					Once()
 			}
 
 			user, err := useCase.UpdateUserInfo(
 				ctx,
-				tc.inputUser.ID,
-				tc.inputUser.Email,
-				tc.password,
+				tc.inputUser.ID.String(),
 				tc.inputUser.Name,
 				tc.inputUser.Surname,
 				tc.inputUser.Username,
-				tc.inputUser.City,
 			)
 
 			if tc.expectedError != nil {

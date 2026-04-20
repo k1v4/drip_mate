@@ -19,3 +19,11 @@ type Outfit struct {
 	Name  string       `json:"name" db:"name"`
 	Items []OutfitItem `json:"items" db:"items"`
 }
+
+type UpdateContext struct {
+	ID     uuid.UUID `json:"id"`
+	City   *string   `json:"city"`
+	Styles *[]int    `json:"styles"`
+	Colors *[]int    `json:"colors"`
+	Music  *[]int    `json:"music"`
+}
