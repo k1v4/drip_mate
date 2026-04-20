@@ -5,10 +5,10 @@ package mocks
 import (
 	context "context"
 
-	entity "github.com/k1v4/drip_mate/internal/entity"
-	mock "github.com/stretchr/testify/mock"
+	internalentity "github.com/k1v4/drip_mate/internal/entity"
+	entity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 
-	user_serviceentity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
+	mock "github.com/stretchr/testify/mock"
 
 	uuid "github.com/google/uuid"
 )
@@ -83,24 +83,131 @@ func (_c *ISsoService_DeleteAccount_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// DeleteOutfit provides a mock function with given fields: ctx, userID, outfitID
+func (_m *ISsoService) DeleteOutfit(ctx context.Context, userID uuid.UUID, outfitID uuid.UUID) error {
+	ret := _m.Called(ctx, userID, outfitID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteOutfit")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
+		r0 = rf(ctx, userID, outfitID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ISsoService_DeleteOutfit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteOutfit'
+type ISsoService_DeleteOutfit_Call struct {
+	*mock.Call
+}
+
+// DeleteOutfit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - outfitID uuid.UUID
+func (_e *ISsoService_Expecter) DeleteOutfit(ctx interface{}, userID interface{}, outfitID interface{}) *ISsoService_DeleteOutfit_Call {
+	return &ISsoService_DeleteOutfit_Call{Call: _e.mock.On("DeleteOutfit", ctx, userID, outfitID)}
+}
+
+func (_c *ISsoService_DeleteOutfit_Call) Run(run func(ctx context.Context, userID uuid.UUID, outfitID uuid.UUID)) *ISsoService_DeleteOutfit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *ISsoService_DeleteOutfit_Call) Return(_a0 error) *ISsoService_DeleteOutfit_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ISsoService_DeleteOutfit_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID) error) *ISsoService_DeleteOutfit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetOutfits provides a mock function with given fields: ctx, userID
+func (_m *ISsoService) GetOutfits(ctx context.Context, userID uuid.UUID) ([]entity.Outfit, error) {
+	ret := _m.Called(ctx, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOutfits")
+	}
+
+	var r0 []entity.Outfit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]entity.Outfit, error)); ok {
+		return rf(ctx, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []entity.Outfit); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]entity.Outfit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ISsoService_GetOutfits_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOutfits'
+type ISsoService_GetOutfits_Call struct {
+	*mock.Call
+}
+
+// GetOutfits is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+func (_e *ISsoService_Expecter) GetOutfits(ctx interface{}, userID interface{}) *ISsoService_GetOutfits_Call {
+	return &ISsoService_GetOutfits_Call{Call: _e.mock.On("GetOutfits", ctx, userID)}
+}
+
+func (_c *ISsoService_GetOutfits_Call) Run(run func(ctx context.Context, userID uuid.UUID)) *ISsoService_GetOutfits_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *ISsoService_GetOutfits_Call) Return(_a0 []entity.Outfit, _a1 error) *ISsoService_GetOutfits_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ISsoService_GetOutfits_Call) RunAndReturn(run func(context.Context, uuid.UUID) ([]entity.Outfit, error)) *ISsoService_GetOutfits_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Login provides a mock function with given fields: ctx, email, password
-func (_m *ISsoService) Login(ctx context.Context, email string, password string) (entity.Role, string, error) {
+func (_m *ISsoService) Login(ctx context.Context, email string, password string) (internalentity.Role, string, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Login")
 	}
 
-	var r0 entity.Role
+	var r0 internalentity.Role
 	var r1 string
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (entity.Role, string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (internalentity.Role, string, error)); ok {
 		return rf(ctx, email, password)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) entity.Role); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) internalentity.Role); ok {
 		r0 = rf(ctx, email, password)
 	} else {
-		r0 = ret.Get(0).(entity.Role)
+		r0 = ret.Get(0).(internalentity.Role)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
@@ -138,12 +245,12 @@ func (_c *ISsoService_Login_Call) Run(run func(ctx context.Context, email string
 	return _c
 }
 
-func (_c *ISsoService_Login_Call) Return(_a0 entity.Role, _a1 string, _a2 error) *ISsoService_Login_Call {
+func (_c *ISsoService_Login_Call) Return(_a0 internalentity.Role, _a1 string, _a2 error) *ISsoService_Login_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *ISsoService_Login_Call) RunAndReturn(run func(context.Context, string, string) (entity.Role, string, error)) *ISsoService_Login_Call {
+func (_c *ISsoService_Login_Call) RunAndReturn(run func(context.Context, string, string) (internalentity.Role, string, error)) *ISsoService_Login_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -214,7 +321,7 @@ func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, stri
 }
 
 // SaveOutfit provides a mock function with given fields: ctx, userID, saveItems
-func (_m *ISsoService) SaveOutfit(ctx context.Context, userID uuid.UUID, saveItems user_serviceentity.SaveOutfitRequest) (uuid.UUID, error) {
+func (_m *ISsoService) SaveOutfit(ctx context.Context, userID uuid.UUID, saveItems entity.SaveOutfitRequest) (uuid.UUID, error) {
 	ret := _m.Called(ctx, userID, saveItems)
 
 	if len(ret) == 0 {
@@ -223,10 +330,10 @@ func (_m *ISsoService) SaveOutfit(ctx context.Context, userID uuid.UUID, saveIte
 
 	var r0 uuid.UUID
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, user_serviceentity.SaveOutfitRequest) (uuid.UUID, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, entity.SaveOutfitRequest) (uuid.UUID, error)); ok {
 		return rf(ctx, userID, saveItems)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, user_serviceentity.SaveOutfitRequest) uuid.UUID); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, entity.SaveOutfitRequest) uuid.UUID); ok {
 		r0 = rf(ctx, userID, saveItems)
 	} else {
 		if ret.Get(0) != nil {
@@ -234,7 +341,7 @@ func (_m *ISsoService) SaveOutfit(ctx context.Context, userID uuid.UUID, saveIte
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, user_serviceentity.SaveOutfitRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, entity.SaveOutfitRequest) error); ok {
 		r1 = rf(ctx, userID, saveItems)
 	} else {
 		r1 = ret.Error(1)
@@ -251,14 +358,14 @@ type ISsoService_SaveOutfit_Call struct {
 // SaveOutfit is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID uuid.UUID
-//   - saveItems user_serviceentity.SaveOutfitRequest
+//   - saveItems entity.SaveOutfitRequest
 func (_e *ISsoService_Expecter) SaveOutfit(ctx interface{}, userID interface{}, saveItems interface{}) *ISsoService_SaveOutfit_Call {
 	return &ISsoService_SaveOutfit_Call{Call: _e.mock.On("SaveOutfit", ctx, userID, saveItems)}
 }
 
-func (_c *ISsoService_SaveOutfit_Call) Run(run func(ctx context.Context, userID uuid.UUID, saveItems user_serviceentity.SaveOutfitRequest)) *ISsoService_SaveOutfit_Call {
+func (_c *ISsoService_SaveOutfit_Call) Run(run func(ctx context.Context, userID uuid.UUID, saveItems entity.SaveOutfitRequest)) *ISsoService_SaveOutfit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(user_serviceentity.SaveOutfitRequest))
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(entity.SaveOutfitRequest))
 	})
 	return _c
 }
@@ -268,28 +375,28 @@ func (_c *ISsoService_SaveOutfit_Call) Return(_a0 uuid.UUID, _a1 error) *ISsoSer
 	return _c
 }
 
-func (_c *ISsoService_SaveOutfit_Call) RunAndReturn(run func(context.Context, uuid.UUID, user_serviceentity.SaveOutfitRequest) (uuid.UUID, error)) *ISsoService_SaveOutfit_Call {
+func (_c *ISsoService_SaveOutfit_Call) RunAndReturn(run func(context.Context, uuid.UUID, entity.SaveOutfitRequest) (uuid.UUID, error)) *ISsoService_SaveOutfit_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateUserInfo provides a mock function with given fields: ctx, id, email, password, name, surname, username, city
-func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, email string, password string, name string, surname string, username string, city string) (user_serviceentity.User, error) {
+func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, email string, password string, name string, surname string, username string, city string) (entity.User, error) {
 	ret := _m.Called(ctx, id, email, password, name, surname, username, city)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUserInfo")
 	}
 
-	var r0 user_serviceentity.User
+	var r0 entity.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) (user_serviceentity.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) (entity.User, error)); ok {
 		return rf(ctx, id, email, password, name, surname, username, city)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) user_serviceentity.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) entity.User); ok {
 		r0 = rf(ctx, id, email, password, name, surname, username, city)
 	} else {
-		r0 = ret.Get(0).(user_serviceentity.User)
+		r0 = ret.Get(0).(entity.User)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string) error); ok {
@@ -326,12 +433,12 @@ func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id 
 	return _c
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) Return(_a0 user_serviceentity.User, _a1 error) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) Return(_a0 entity.User, _a1 error) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string, string) (user_serviceentity.User, error)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string, string) (entity.User, error)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

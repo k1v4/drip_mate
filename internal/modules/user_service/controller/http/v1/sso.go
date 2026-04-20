@@ -40,7 +40,7 @@ func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, c
 	handler.POST("/users/outfit", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
 
 	// GET  /api/v1/users/outfit
-	handler.POST("/users/outfit", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
+	handler.GET("/users/outfit", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
 
 	// POST  /api/v1/users/outfit
 	handler.DELETE("/users/outfit/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
