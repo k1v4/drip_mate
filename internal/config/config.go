@@ -49,14 +49,20 @@ type Hasher struct {
 	Pepper string `yaml:"pepper" env:"TOKEN_PEPPER" env-required:"true"`
 }
 
+type Recommendation struct {
+	MLBaseUrl       string `yaml:"ml_base_url" env-required:"true"`
+	WeatherApiToken string `yaml:"weather_api_token" env-required:"true"`
+}
+
 type Config struct {
-	Server        Server        `yaml:"server"`
-	DB            DB            `yaml:"db"`
-	Token         Token         `yaml:"token"`
-	ObjectStorage ObjectStorage `yaml:"object_storage"`
-	Kafka         Kafka         `yaml:"kafka"`
-	SMTP          SMTP          `yaml:"smtp"`
-	Hasher        Hasher        `yaml:"hasher"`
+	Server         Server         `yaml:"server"`
+	DB             DB             `yaml:"db"`
+	Token          Token          `yaml:"token"`
+	ObjectStorage  ObjectStorage  `yaml:"object_storage"`
+	Kafka          Kafka          `yaml:"kafka"`
+	SMTP           SMTP           `yaml:"smtp"`
+	Hasher         Hasher         `yaml:"hasher"`
+	Recommendation Recommendation `yaml:"recommendation"`
 }
 
 func MustLoadConfig() *Config {

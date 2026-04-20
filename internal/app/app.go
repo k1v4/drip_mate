@@ -25,12 +25,14 @@ import (
 
 	repositoryCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/repository"
 	repositoryObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/repository"
+	repositoryRecommedation "github.com/k1v4/drip_mate/internal/modules/recommendation_core_module/repository"
 	repositoryReference "github.com/k1v4/drip_mate/internal/modules/reference_module/repository"
 	repositoryUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase/repository"
 
 	serviceCatalog "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/usecase"
 	serviceNotif "github.com/k1v4/drip_mate/internal/modules/notification_service/usecase"
 	serviceObject "github.com/k1v4/drip_mate/internal/modules/object_gateway/service"
+	serviceRecommendation "github.com/k1v4/drip_mate/internal/modules/recommendation_core_module/usecase"
 	serviceReference "github.com/k1v4/drip_mate/internal/modules/reference_module/usecase"
 	serviceUser "github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 
@@ -125,17 +127,21 @@ func Run() {
 
 	hasher := argon.NewArgon2Hasher(argon.DefaultParams(), cfg.Hasher.Pepper)
 	email := adapter.NewGoMailClient(cfg.SMTP)
+	weather := adapter.NewOpenWeatherAdapter(cfg.Recommendation.WeatherApiToken)
+	ml := adapter.NewClient(cfg.Recommendation.MLBaseUrl)
 
 	authRepo := repositoryUser.NewAuthRepository(pg)
 	uploadRepo := repositoryObject.NewUploadRepository(cfg.ObjectStorage.Address, minioClient, cfg.ObjectStorage.BucketName)
 	catalogRepo := repositoryCatalog.NewClothingRepository(pg)
 	referencesRepo := repositoryReference.NewReferenceRepository(pg)
+	recommendationRepo := repositoryRecommedation.NewRecommendationsRepository(pg)
 
 	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducerNotifications, new(cfg.Token), hasher)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
 	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService, kafkaProducerCatalog, serviceLogger)
 	referencesUseCase := serviceReference.NewReferenceUseCase(referencesRepo)
+	recommendationsUseCase := serviceRecommendation.NewRecommendationsUseCase(recommendationRepo, weather, ml, catalogUseCase, serviceLogger)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 
@@ -143,7 +149,7 @@ func Run() {
 	e.Validator = validator.New()
 	e.HideBanner = true
 	e.HTTPErrorHandler = makeHTTPErrorHandler(serviceLogger)
-	router.NewRouter(e, serviceLogger, authUseCase, cfg, catalogUseCase, referencesUseCase)
+	router.NewRouter(e, serviceLogger, authUseCase, cfg, catalogUseCase, referencesUseCase, recommendationsUseCase)
 
 	httpServer := httpserver.New(e, httpserver.Port(strconv.Itoa(cfg.Server.RestPort)))
 	grpcServer, err := grpcTransport.NewServer(ctx, cfg.Server.GRPCPort, uploadService)
