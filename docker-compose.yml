@@ -57,10 +57,10 @@ services:
     volumes:
       - ./kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --describe --topic __consumer_offsets 2>/dev/null | grep -q '__consumer_offsets'"]
       interval: 5s
       timeout: 10s
-      retries: 10
+      retries: 15
       start_period: 30s
     networks:
       - app-network

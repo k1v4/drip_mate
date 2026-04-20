@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	middlewareJWT "github.com/k1v4/drip_mate/internal/router/middleware"
+	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
@@ -33,6 +35,15 @@ func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, c
 
 	// DELETE  /api/v1/users
 	handler.DELETE("/users", r.DeleteAccount, middlewareJWT.JWTAuth(cfg))
+
+	// POST  /api/v1/users/outfit
+	handler.POST("/users/outfit", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
+
+	// GET  /api/v1/users/outfit
+	handler.POST("/users/outfit", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
+
+	// POST  /api/v1/users/outfit
+	handler.DELETE("/users/outfit/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
 }
 
 func (r *containerRoutes) Auth(c echo.Context) error {
@@ -175,4 +186,80 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	return c.JSON(http.StatusOK, entity.DeleteUserResponse{
 		IsSuccessfully: isSucceed,
 	})
+}
+
+func (r *containerRoutes) SaveOutfit(c echo.Context) error {
+	const op = "controller.SaveOutfit"
+
+	ctx := c.Request().Context()
+
+	userID := c.Get(middlewareJWT.UserIDKey).(string)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format").SetInternal(err)
+	}
+
+	u := new(entity.SaveOutfitRequest)
+	if err = c.Bind(u); err != nil {
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(err)
+	}
+
+	if err = c.Validate(u); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(err)
+	}
+
+	outfitUUID, err := r.t.SaveOutfit(ctx, userUUID, *u)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to save outfit").SetInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"outfit_id": outfitUUID,
+	})
+}
+
+func (r *containerRoutes) GetOutfits(c echo.Context) error {
+	const op = "controller.GetOutfits"
+	ctx := c.Request().Context()
+
+	userID := c.Get(middlewareJWT.UserIDKey).(string)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format").SetInternal(err)
+	}
+
+	outfits, err := r.t.GetOutfits(ctx, userUUID)
+	if err != nil {
+		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error").SetInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, outfits)
+}
+
+func (r *containerRoutes) DeleteOutfit(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	userID := c.Get(middlewareJWT.UserIDKey).(string)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format").SetInternal(err)
+	}
+
+	idParam := c.Param("id")
+	outfitUUID, err := uuid.Parse(idParam)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format").SetInternal(err)
+	}
+
+	err = r.t.DeleteOutfit(ctx, userUUID, outfitUUID)
+	if err != nil {
+		if errors.Is(err, DataBase.ErrOutfitNotFound) {
+			return echo.NewHTTPError(http.StatusBadRequest, "outfit not found").SetInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error").SetInternal(err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

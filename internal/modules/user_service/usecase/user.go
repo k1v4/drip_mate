@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/config"
 	"github.com/k1v4/drip_mate/internal/entity"
 	userEntity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
@@ -151,4 +152,33 @@ func (s *AuthUseCase) UpdateUserInfo(
 	}
 
 	return user, nil
+}
+
+func (s *AuthUseCase) SaveOutfit(ctx context.Context, userID uuid.UUID, saveItems userEntity.SaveOutfitRequest) (uuid.UUID, error) {
+	outfitUUID, err := s.repo.SaveOutfit(ctx, userID, saveItems)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to save outfit: %w", err)
+	}
+
+	return outfitUUID, nil
+}
+
+func (s *AuthUseCase) GetOutfits(ctx context.Context, userID uuid.UUID) ([]userEntity.Outfit, error) {
+	outfits, err := s.repo.GetUserOutfits(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get outfits: %w", err)
+	}
+
+	return outfits, nil
+}
+
+func (s *AuthUseCase) DeleteOutfit(ctx context.Context, userID, outfitID uuid.UUID) error {
+	const op = "service.DeleteOutfit"
+
+	err := s.repo.DeleteOutfit(ctx, userID, outfitID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
