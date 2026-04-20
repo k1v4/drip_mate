@@ -28,7 +28,7 @@ func NewAccessToken(user *entity.User, duration time.Duration, secret, issuer st
 
 	claims["iss"] = issuer
 	claims["id"] = user.ID
-	claims["access_level_id"] = user.AccessLevelId
+	claims["access_level_id"] = user.AccessID
 	claims["exp"] = time.Now().Add(duration).Unix()
 
 	tokenString, err := token.SignedString([]byte(secret))

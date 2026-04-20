@@ -190,6 +190,65 @@ func (_c *ISsoService_GetOutfits_Call) RunAndReturn(run func(context.Context, uu
 	return _c
 }
 
+// GetUserByID provides a mock function with given fields: ctx, userID
+func (_m *ISsoService) GetUserByID(ctx context.Context, userID uuid.UUID) (*entity.User, error) {
+	ret := _m.Called(ctx, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserByID")
+	}
+
+	var r0 *entity.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*entity.User, error)); ok {
+		return rf(ctx, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *entity.User); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ISsoService_GetUserByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserByID'
+type ISsoService_GetUserByID_Call struct {
+	*mock.Call
+}
+
+// GetUserByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+func (_e *ISsoService_Expecter) GetUserByID(ctx interface{}, userID interface{}) *ISsoService_GetUserByID_Call {
+	return &ISsoService_GetUserByID_Call{Call: _e.mock.On("GetUserByID", ctx, userID)}
+}
+
+func (_c *ISsoService_GetUserByID_Call) Run(run func(ctx context.Context, userID uuid.UUID)) *ISsoService_GetUserByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *ISsoService_GetUserByID_Call) Return(_a0 *entity.User, _a1 error) *ISsoService_GetUserByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ISsoService_GetUserByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*entity.User, error)) *ISsoService_GetUserByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Login provides a mock function with given fields: ctx, email, password
 func (_m *ISsoService) Login(ctx context.Context, email string, password string) (internalentity.Role, string, error) {
 	ret := _m.Called(ctx, email, password)
@@ -380,27 +439,125 @@ func (_c *ISsoService_SaveOutfit_Call) RunAndReturn(run func(context.Context, uu
 	return _c
 }
 
-// UpdateUserInfo provides a mock function with given fields: ctx, id, email, password, name, surname, username, city
-func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, email string, password string, name string, surname string, username string, city string) (entity.User, error) {
-	ret := _m.Called(ctx, id, email, password, name, surname, username, city)
+// UpdateContext provides a mock function with given fields: ctx, userID, req
+func (_m *ISsoService) UpdateContext(ctx context.Context, userID uuid.UUID, req *entity.UpdateContext) error {
+	ret := _m.Called(ctx, userID, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateContext")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *entity.UpdateContext) error); ok {
+		r0 = rf(ctx, userID, req)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ISsoService_UpdateContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateContext'
+type ISsoService_UpdateContext_Call struct {
+	*mock.Call
+}
+
+// UpdateContext is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - req *entity.UpdateContext
+func (_e *ISsoService_Expecter) UpdateContext(ctx interface{}, userID interface{}, req interface{}) *ISsoService_UpdateContext_Call {
+	return &ISsoService_UpdateContext_Call{Call: _e.mock.On("UpdateContext", ctx, userID, req)}
+}
+
+func (_c *ISsoService_UpdateContext_Call) Run(run func(ctx context.Context, userID uuid.UUID, req *entity.UpdateContext)) *ISsoService_UpdateContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(*entity.UpdateContext))
+	})
+	return _c
+}
+
+func (_c *ISsoService_UpdateContext_Call) Return(_a0 error) *ISsoService_UpdateContext_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ISsoService_UpdateContext_Call) RunAndReturn(run func(context.Context, uuid.UUID, *entity.UpdateContext) error) *ISsoService_UpdateContext_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdatePassword provides a mock function with given fields: ctx, id, pass
+func (_m *ISsoService) UpdatePassword(ctx context.Context, id uuid.UUID, pass *entity.UpdatePass) error {
+	ret := _m.Called(ctx, id, pass)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdatePassword")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *entity.UpdatePass) error); ok {
+		r0 = rf(ctx, id, pass)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ISsoService_UpdatePassword_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdatePassword'
+type ISsoService_UpdatePassword_Call struct {
+	*mock.Call
+}
+
+// UpdatePassword is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+//   - pass *entity.UpdatePass
+func (_e *ISsoService_Expecter) UpdatePassword(ctx interface{}, id interface{}, pass interface{}) *ISsoService_UpdatePassword_Call {
+	return &ISsoService_UpdatePassword_Call{Call: _e.mock.On("UpdatePassword", ctx, id, pass)}
+}
+
+func (_c *ISsoService_UpdatePassword_Call) Run(run func(ctx context.Context, id uuid.UUID, pass *entity.UpdatePass)) *ISsoService_UpdatePassword_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(*entity.UpdatePass))
+	})
+	return _c
+}
+
+func (_c *ISsoService_UpdatePassword_Call) Return(_a0 error) *ISsoService_UpdatePassword_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ISsoService_UpdatePassword_Call) RunAndReturn(run func(context.Context, uuid.UUID, *entity.UpdatePass) error) *ISsoService_UpdatePassword_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateUserInfo provides a mock function with given fields: ctx, id, name, surname, username
+func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, name string, surname string, username string) (*entity.User, error) {
+	ret := _m.Called(ctx, id, name, surname, username)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUserInfo")
 	}
 
-	var r0 entity.User
+	var r0 *entity.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) (entity.User, error)); ok {
-		return rf(ctx, id, email, password, name, surname, username, city)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*entity.User, error)); ok {
+		return rf(ctx, id, name, surname, username)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) entity.User); ok {
-		r0 = rf(ctx, id, email, password, name, surname, username, city)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *entity.User); ok {
+		r0 = rf(ctx, id, name, surname, username)
 	} else {
-		r0 = ret.Get(0).(entity.User)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*entity.User)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, id, email, password, name, surname, username, city)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
+		r1 = rf(ctx, id, name, surname, username)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -416,29 +573,26 @@ type ISsoService_UpdateUserInfo_Call struct {
 // UpdateUserInfo is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id string
-//   - email string
-//   - password string
 //   - name string
 //   - surname string
 //   - username string
-//   - city string
-func (_e *ISsoService_Expecter) UpdateUserInfo(ctx interface{}, id interface{}, email interface{}, password interface{}, name interface{}, surname interface{}, username interface{}, city interface{}) *ISsoService_UpdateUserInfo_Call {
-	return &ISsoService_UpdateUserInfo_Call{Call: _e.mock.On("UpdateUserInfo", ctx, id, email, password, name, surname, username, city)}
+func (_e *ISsoService_Expecter) UpdateUserInfo(ctx interface{}, id interface{}, name interface{}, surname interface{}, username interface{}) *ISsoService_UpdateUserInfo_Call {
+	return &ISsoService_UpdateUserInfo_Call{Call: _e.mock.On("UpdateUserInfo", ctx, id, name, surname, username)}
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id string, email string, password string, name string, surname string, username string, city string)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id string, name string, surname string, username string)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string))
 	})
 	return _c
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) Return(_a0 entity.User, _a1 error) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) Return(_a0 *entity.User, _a1 error) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string, string) (entity.User, error)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string) (*entity.User, error)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

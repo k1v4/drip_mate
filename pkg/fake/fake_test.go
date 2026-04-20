@@ -21,5 +21,5 @@ func Test_CreateUser(t *testing.T) {
 
 	assert.Equal(t, user.Email, email)
 	assert.NotEmpty(t, user.Password)
-	assert.Equal(t, user.AccessLevelId, accessLevel)
+	assert.Equal(t, user.AccessID, accessLevel)
 }
