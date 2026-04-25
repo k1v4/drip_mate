@@ -72,25 +72,25 @@ func (s *AuthUseCase) Login(ctx context.Context, email string, password string) 
 
 // Register adds new user to app
 // If user with given email already exists, returns error.
-func (s *AuthUseCase) Register(ctx context.Context, email, password string) (string, string, error) {
+func (s *AuthUseCase) Register(ctx context.Context, email, password string) (entity.Role, string, error) {
 	const op = "service.Register"
 
 	passHash, err := s.hasher.Hash(password)
 	if err != nil {
-		return "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	id, accessID, err := s.repo.SaveUser(ctx, email, passHash)
 	if err != nil {
 		if errors.Is(err, DataBase.ErrUserExists) {
-			return "", "", ErrUserExist
+			return 0, "", ErrUserExist
 		}
 
-		return "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 	userUUID, err := uuid.Parse(id)
 	if err != nil {
-		return "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	tokenAccess, err := jwtpkg.NewAccessToken(&userEntity.User{
@@ -98,7 +98,7 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password string) (str
 		AccessID: accessID,
 	}, s.cfg.TTL, s.cfg.Secret, s.cfg.Issuer)
 	if err != nil {
-		return "", "", fmt.Errorf("%s: %w", op, err)
+		return 0, "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	err = s.kafkaProducer.Send(ctx, entity.NotificationEvent{
@@ -108,7 +108,7 @@ func (s *AuthUseCase) Register(ctx context.Context, email, password string) (str
 		s.logger.Error(ctx, fmt.Sprintf("failed to send register notification to drip_mate: %s", err.Error()))
 	}
 
-	return id, tokenAccess, nil
+	return entity.Role(accessID), tokenAccess, nil
 }
 
 func (s *AuthUseCase) DeleteAccount(ctx context.Context, id string) (bool, error) {

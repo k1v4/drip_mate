@@ -156,7 +156,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "new@mail.com", "password12345").
-					Return(gofakeit.UUID(), "", nil).
+					Return(1, "", nil).
 					Once()
 			},
 			expectedStatus: http.StatusOK,
@@ -195,7 +195,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return("", "", usecase.ErrUserExist).
+					Return(0, "", usecase.ErrUserExist).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: user exist").Return().Once()
 			},
@@ -208,7 +208,7 @@ func TestAuthController_Register(t *testing.T) {
 			mockReturn: func() {
 				mockSvc.EXPECT().
 					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return("", "", errors.New("something bad")).
+					Return(0, "", errors.New("something bad")).
 					Once()
 				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: something bad").Return().Once()
 			},
