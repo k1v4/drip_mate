@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -133,7 +134,11 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (*entity.Use
 	`
 
 	var (
-		result entity.User
+		result   entity.User
+		username sql.NullString
+		name     sql.NullString
+		surname  sql.NullString
+		city     sql.NullString
 
 		musicJSON   []byte
 		stylesJSON  []byte
@@ -145,10 +150,10 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (*entity.Use
 		&result.ID,
 		&result.Email,
 		&result.Password,
-		&result.Username,
-		&result.Name,
-		&result.Surname,
-		&result.City,
+		&username,
+		&name,
+		&surname,
+		&city,
 		&result.AccessID,
 		&result.AccessLevel,
 
@@ -179,6 +184,11 @@ func (a *AuthRepository) GetUser(ctx context.Context, email string) (*entity.Use
 	if err := json.Unmarshal(outfitsJSON, &result.Outfits); err != nil {
 		return nil, fmt.Errorf("%s: outfits unmarshal: %w", op, err)
 	}
+
+	result.Name = name.String
+	result.Surname = surname.String
+	result.City = city.String
+	result.Username = username.String
 
 	return new(result), nil
 }
