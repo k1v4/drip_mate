@@ -27,7 +27,7 @@ func NewRecommendationRoutes(handler *echo.Group, t IRecommendationUseCase, l lo
 	r := &recommendationsRoutes{t, l, cfg}
 
 	// PUT /api/v1/recommendation
-	handler.GET("/recommendation", r.GetRecommendation, middlewareJWT.JWTAuth(cfg))
+	handler.PUT("/recommendation", r.GetRecommendation, middlewareJWT.JWTAuth(cfg))
 }
 
 func (r *recommendationsRoutes) GetRecommendation(c echo.Context) error {

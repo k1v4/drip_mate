@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/config"
@@ -20,6 +21,10 @@ type IClothingUseCase interface {
 	DeleteItem(ctx context.Context, id uuid.UUID) error
 	UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest, fileName string, imageData []byte) (*entity.Catalog, error)
 	CreateItem(ctx context.Context, req *entity.CreateCatalogRequest, fileName string, imageData []byte) (*entity.Catalog, error)
+	GetAllItems(
+		ctx context.Context,
+		limit, offset int,
+	) ([]entity.Catalog, int, error)
 }
 
 type containerRoutes struct {
@@ -43,6 +48,7 @@ func NewCatalogRoutes(handler *echo.Group, t IClothingUseCase, l logger.Logger, 
 	adminGroup.POST("", r.CreateItem)
 	adminGroup.PUT("/:id", r.UpdateItem)
 	adminGroup.DELETE("/:id", r.DeleteItem)
+	adminGroup.GET("/all", r.GetAllItems)
 }
 
 func (r *containerRoutes) GetItem(c echo.Context) error {
@@ -172,4 +178,38 @@ func (r *containerRoutes) CreateItem(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, itemUUID)
+}
+
+func (r *containerRoutes) GetAllItems(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	page := 1
+	limit := 10
+
+	if p := c.QueryParam("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	if l := c.QueryParam("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	offset := (page - 1) * limit
+
+	items, total, err := r.t.GetAllItems(ctx, limit, offset)
+	if err != nil {
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			"failed to get catalog items",
+		).SetInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"items": items,
+		"total": total,
+	})
 }

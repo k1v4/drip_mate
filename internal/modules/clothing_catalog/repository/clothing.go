@@ -78,6 +78,107 @@ func (cr *ClothingRepository) GetItemByID(ctx context.Context, id uuid.UUID) (*e
 	return new(item), nil
 }
 
+func (cr *ClothingRepository) GetAllItems(
+	ctx context.Context,
+	limit, offset int,
+) ([]entity.Catalog, int, error) {
+	sqlReq := `
+		SELECT
+			c.id,
+			c.name,
+			ca.name AS category,
+			c.category_id,
+			c.gender,
+			c.season_id,
+			s.name  AS season,
+			c.formality_level,
+			c.material,
+			c.image_url,
+			c.created_at,
+			c.updated_at,
+			c.is_deleted,
+			ARRAY_AGG(DISTINCT col.name) FILTER (WHERE col.name IS NOT NULL) AS colors,
+			ARRAY_AGG(DISTINCT st.name)  FILTER (WHERE st.name  IS NOT NULL) AS styles
+		FROM catalog c
+				 LEFT JOIN season   s   ON s.id   = c.season_id
+				 LEFT JOIN category ca  ON ca.id  = c.category_id
+				 LEFT JOIN color_catalog cc  ON cc.catalog_id = c.id
+				 LEFT JOIN color_types   col ON col.id         = cc.color_id
+				 LEFT JOIN style_catalog sc  ON sc.catalog_id = c.id
+				 LEFT JOIN style_types   st  ON st.id          = sc.style_id
+		WHERE c.is_deleted = false
+		GROUP BY
+			c.id,
+			c.name,
+			ca.name,
+			c.category_id,
+			c.gender,
+			c.season_id,
+			s.name,
+			c.formality_level,
+			c.material,
+			c.image_url,
+			c.created_at,
+			c.updated_at,
+			c.is_deleted
+		ORDER BY c.created_at DESC
+		LIMIT $1 OFFSET $2;
+`
+
+	rows, err := cr.Pool.Query(ctx, sqlReq, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query items: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]entity.Catalog, 0, limit)
+
+	for rows.Next() {
+		var item entity.Catalog
+
+		err := rows.Scan(
+			&item.ID,
+			&item.Name,
+			&item.Category,
+			&item.CategoryID,
+			&item.Gender,
+			&item.SeasonID,
+			&item.Season,
+			&item.FormalityLevel,
+			&item.Material,
+			&item.ImageURL,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+			&item.IsDeleted,
+			&item.Colors,
+			&item.Styles,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan item: %w", err)
+		}
+
+		items = append(items, item)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("rows error: %w", err)
+	}
+
+	var total int
+	countQuery := `
+		SELECT COUNT(*)
+		FROM catalog c
+		WHERE c.is_deleted = false
+	`
+
+	err = cr.Pool.QueryRow(ctx, countQuery).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count items: %w", err)
+	}
+
+	return items, total, nil
+}
+
 func (cr *ClothingRepository) CreateItem(ctx context.Context, req *entity.CreateCatalogRequest) (*entity.Catalog, error) {
 	var created entity.Catalog
 

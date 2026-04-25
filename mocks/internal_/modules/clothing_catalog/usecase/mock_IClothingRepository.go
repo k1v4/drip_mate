@@ -130,6 +130,73 @@ func (_c *IClothingRepository_DeleteItem_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// GetAllItems provides a mock function with given fields: ctx, limit, offset
+func (_m *IClothingRepository) GetAllItems(ctx context.Context, limit int, offset int) ([]entity.Catalog, int, error) {
+	ret := _m.Called(ctx, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAllItems")
+	}
+
+	var r0 []entity.Catalog
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) ([]entity.Catalog, int, error)); ok {
+		return rf(ctx, limit, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) []entity.Catalog); ok {
+		r0 = rf(ctx, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]entity.Catalog)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int, int) int); ok {
+		r1 = rf(ctx, limit, offset)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, int, int) error); ok {
+		r2 = rf(ctx, limit, offset)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// IClothingRepository_GetAllItems_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllItems'
+type IClothingRepository_GetAllItems_Call struct {
+	*mock.Call
+}
+
+// GetAllItems is a helper method to define mock.On call
+//   - ctx context.Context
+//   - limit int
+//   - offset int
+func (_e *IClothingRepository_Expecter) GetAllItems(ctx interface{}, limit interface{}, offset interface{}) *IClothingRepository_GetAllItems_Call {
+	return &IClothingRepository_GetAllItems_Call{Call: _e.mock.On("GetAllItems", ctx, limit, offset)}
+}
+
+func (_c *IClothingRepository_GetAllItems_Call) Run(run func(ctx context.Context, limit int, offset int)) *IClothingRepository_GetAllItems_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int), args[2].(int))
+	})
+	return _c
+}
+
+func (_c *IClothingRepository_GetAllItems_Call) Return(_a0 []entity.Catalog, _a1 int, _a2 error) *IClothingRepository_GetAllItems_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *IClothingRepository_GetAllItems_Call) RunAndReturn(run func(context.Context, int, int) ([]entity.Catalog, int, error)) *IClothingRepository_GetAllItems_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetItemByID provides a mock function with given fields: ctx, id
 func (_m *IClothingRepository) GetItemByID(ctx context.Context, id uuid.UUID) (*entity.Catalog, error) {
 	ret := _m.Called(ctx, id)
