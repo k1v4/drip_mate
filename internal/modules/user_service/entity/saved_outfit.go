@@ -22,7 +22,7 @@ type Outfit struct {
 
 type UpdateContext struct {
 	ID     uuid.UUID `json:"id"`
-	City   *string   `json:"city"`
+	City   string    `json:"city"`
 	Styles *[]int    `json:"styles"`
 	Colors *[]int    `json:"colors"`
 	Music  *[]int    `json:"music"`

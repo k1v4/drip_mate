@@ -261,7 +261,11 @@ func (a *AuthRepository) GetUserById(ctx context.Context, id string) (*entity.Us
 	`
 
 	var (
-		result entity.User
+		result   entity.User
+		username sql.NullString
+		name     sql.NullString
+		surname  sql.NullString
+		city     sql.NullString
 
 		musicJSON   []byte
 		stylesJSON  []byte
@@ -273,10 +277,10 @@ func (a *AuthRepository) GetUserById(ctx context.Context, id string) (*entity.Us
 		&result.ID,
 		&result.Email,
 		&result.Password,
-		&result.Username,
-		&result.Name,
-		&result.Surname,
-		&result.City,
+		&username,
+		&name,
+		&surname,
+		&city,
 		&result.AccessID,
 		&result.AccessLevel,
 
@@ -307,6 +311,10 @@ func (a *AuthRepository) GetUserById(ctx context.Context, id string) (*entity.Us
 	if err := json.Unmarshal(outfitsJSON, &result.Outfits); err != nil {
 		return nil, fmt.Errorf("%s: outfits unmarshal: %w", op, err)
 	}
+	result.Name = name.String
+	result.Surname = surname.String
+	result.City = city.String
+	result.Username = username.String
 
 	return new(result), nil
 }
@@ -349,6 +357,9 @@ func (a *AuthRepository) UpdateUserPersonal(ctx context.Context, newUser *entity
 		}
 		if newUser.Surname != "" {
 			builder = builder.Set("surname", newUser.Surname)
+		}
+		if newUser.Gender != "" {
+			builder = builder.Set("gender", newUser.Gender)
 		}
 
 		sqlReq, args, err := builder.
@@ -518,10 +529,10 @@ func (a *AuthRepository) UpdateUserContext(ctx context.Context, req *entity.Upda
 	const op = "repository.UpdateUserContext"
 
 	err := postgres.WithTx(ctx, a.Pool, func(tx pgx.Tx) error {
-		if req.City != nil {
+		if req.City != "" {
 			builder := a.Builder.
 				Update("users").
-				Set("city", *req.City).
+				Set("city", req.City).
 				Where(sq.Eq{"id": req.ID})
 
 			sqlReq, args, err := builder.ToSql()

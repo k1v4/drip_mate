@@ -257,7 +257,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			token:     "valid-token",
 			mockReturn: func() {
 				mockSvc.EXPECT().
-					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe").
+					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe", "").
 					Return(&entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com"}, nil).Once()
 			},
 			expectedStatus: http.StatusOK,
@@ -270,7 +270,7 @@ func TestAuthController_UpdateUserInfo(t *testing.T) {
 			token:     "valid-token",
 			mockReturn: func() {
 				mockSvc.EXPECT().
-					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe").
+					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe", "").
 					Return(&entity.User{}, errors.New("usecase error")).Once()
 				mockLogger.EXPECT().Error(mock.Anything, fmt.Sprintf("%s: usecase error", "controller.UpdateUserInfo")).Return().Once()
 			},
