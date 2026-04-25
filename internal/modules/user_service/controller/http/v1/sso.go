@@ -115,7 +115,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(err)
 	}
 
-	register, accessToken, err := r.t.Register(ctx, u.Email, u.Password)
+	accessID, accessToken, err := r.t.Register(ctx, u.Email, u.Password)
 	if err != nil {
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 
@@ -136,8 +136,8 @@ func (r *containerRoutes) Register(c echo.Context) error {
 		MaxAge:   int(r.cfg.TTL.Seconds()),
 	})
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"user_id": register,
+	return c.JSON(http.StatusOK, entity.LoginResponse{
+		AccessId: accessID,
 	})
 }
 

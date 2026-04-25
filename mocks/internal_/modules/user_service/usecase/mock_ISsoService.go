@@ -315,23 +315,23 @@ func (_c *ISsoService_Login_Call) RunAndReturn(run func(context.Context, string,
 }
 
 // Register provides a mock function with given fields: ctx, email, password
-func (_m *ISsoService) Register(ctx context.Context, email string, password string) (string, string, error) {
+func (_m *ISsoService) Register(ctx context.Context, email string, password string) (internalentity.Role, string, error) {
 	ret := _m.Called(ctx, email, password)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Register")
 	}
 
-	var r0 string
+	var r0 internalentity.Role
 	var r1 string
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (internalentity.Role, string, error)); ok {
 		return rf(ctx, email, password)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) internalentity.Role); ok {
 		r0 = rf(ctx, email, password)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(internalentity.Role)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
@@ -369,12 +369,12 @@ func (_c *ISsoService_Register_Call) Run(run func(ctx context.Context, email str
 	return _c
 }
 
-func (_c *ISsoService_Register_Call) Return(_a0 string, _a1 string, _a2 error) *ISsoService_Register_Call {
+func (_c *ISsoService_Register_Call) Return(_a0 internalentity.Role, _a1 string, _a2 error) *ISsoService_Register_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, string, string) (string, string, error)) *ISsoService_Register_Call {
+func (_c *ISsoService_Register_Call) RunAndReturn(run func(context.Context, string, string) (internalentity.Role, string, error)) *ISsoService_Register_Call {
 	_c.Call.Return(run)
 	return _c
 }
