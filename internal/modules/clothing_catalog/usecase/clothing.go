@@ -17,6 +17,10 @@ type IClothingRepository interface {
 	CreateItem(ctx context.Context, req *entity.CreateCatalogRequest) (*entity.Catalog, error)
 	UpdateItem(ctx context.Context, req *entity.UpdateCatalogRequest) (*entity.Catalog, error)
 	DeleteItem(ctx context.Context, id uuid.UUID) error
+	GetAllItems(
+		ctx context.Context,
+		limit, offset int,
+	) ([]entity.Catalog, int, error)
 }
 
 type ClothingCatalogUseCase struct {
@@ -134,4 +138,28 @@ func (uc *ClothingCatalogUseCase) DeleteItem(ctx context.Context, id uuid.UUID) 
 	}
 
 	return nil
+}
+
+func (uc *ClothingCatalogUseCase) GetAllItems(
+	ctx context.Context,
+	limit, offset int,
+) ([]entity.Catalog, int, error) {
+	const op = "ClothingCatalogUseCase.GetAllItems"
+
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	items, total, err := uc.repoClothing.GetAllItems(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return items, total, nil
 }

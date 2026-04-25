@@ -62,3 +62,18 @@ type CatalogEvent struct {
 	Type    CatalogType `json:"type"` // "created" | "updated" | "deleted"
 	Payload uuid.UUID   `json:"payload"`
 }
+
+type CatalogItem struct {
+	ID       int      `json:"id"`
+	Name     string   `json:"name"`
+	Season   string   `json:"season,omitempty"`
+	Styles   []string `json:"styles,omitempty"`
+	Style    string   `json:"style,omitempty"`
+	Gender   string   `json:"gender,omitempty"`
+	ImageURL string   `json:"image_url,omitempty"`
+}
+
+type CatalogResponse struct {
+	Items []CatalogItem `json:"items"`
+	Total int           `json:"total"`
+}
