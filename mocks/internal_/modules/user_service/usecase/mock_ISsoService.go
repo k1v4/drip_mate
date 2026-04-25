@@ -535,9 +535,9 @@ func (_c *ISsoService_UpdatePassword_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
-// UpdateUserInfo provides a mock function with given fields: ctx, id, name, surname, username
-func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, name string, surname string, username string) (*entity.User, error) {
-	ret := _m.Called(ctx, id, name, surname, username)
+// UpdateUserInfo provides a mock function with given fields: ctx, id, name, surname, username, gender
+func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, name string, surname string, username string, gender string) (*entity.User, error) {
+	ret := _m.Called(ctx, id, name, surname, username, gender)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUserInfo")
@@ -545,19 +545,19 @@ func (_m *ISsoService) UpdateUserInfo(ctx context.Context, id string, name strin
 
 	var r0 *entity.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*entity.User, error)); ok {
-		return rf(ctx, id, name, surname, username)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) (*entity.User, error)); ok {
+		return rf(ctx, id, name, surname, username, gender)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *entity.User); ok {
-		r0 = rf(ctx, id, name, surname, username)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) *entity.User); ok {
+		r0 = rf(ctx, id, name, surname, username, gender)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
-		r1 = rf(ctx, id, name, surname, username)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
+		r1 = rf(ctx, id, name, surname, username, gender)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -576,13 +576,14 @@ type ISsoService_UpdateUserInfo_Call struct {
 //   - name string
 //   - surname string
 //   - username string
-func (_e *ISsoService_Expecter) UpdateUserInfo(ctx interface{}, id interface{}, name interface{}, surname interface{}, username interface{}) *ISsoService_UpdateUserInfo_Call {
-	return &ISsoService_UpdateUserInfo_Call{Call: _e.mock.On("UpdateUserInfo", ctx, id, name, surname, username)}
+//   - gender string
+func (_e *ISsoService_Expecter) UpdateUserInfo(ctx interface{}, id interface{}, name interface{}, surname interface{}, username interface{}, gender interface{}) *ISsoService_UpdateUserInfo_Call {
+	return &ISsoService_UpdateUserInfo_Call{Call: _e.mock.On("UpdateUserInfo", ctx, id, name, surname, username, gender)}
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id string, name string, surname string, username string)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) Run(run func(ctx context.Context, id string, name string, surname string, username string, gender string)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string))
 	})
 	return _c
 }
@@ -592,7 +593,7 @@ func (_c *ISsoService_UpdateUserInfo_Call) Return(_a0 *entity.User, _a1 error) *
 	return _c
 }
 
-func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string) (*entity.User, error)) *ISsoService_UpdateUserInfo_Call {
+func (_c *ISsoService_UpdateUserInfo_Call) RunAndReturn(run func(context.Context, string, string, string, string, string) (*entity.User, error)) *ISsoService_UpdateUserInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

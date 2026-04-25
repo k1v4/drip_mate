@@ -333,6 +333,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 				tc.inputUser.Name,
 				tc.inputUser.Surname,
 				tc.inputUser.Username,
+				"",
 			)
 
 			if tc.expectedError != nil {

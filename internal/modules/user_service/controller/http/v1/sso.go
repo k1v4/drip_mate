@@ -154,7 +154,7 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(err)
 	}
 
-	user, err := r.t.UpdateUserInfo(ctx, userID, u.Name, u.Surname, u.Username)
+	user, err := r.t.UpdateUserInfo(ctx, userID, u.Name, u.Surname, u.Username, u.Gender)
 	if err != nil {
 		r.l.Error(ctx, fmt.Sprintf("%s: %v", op, err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error").SetInternal(err)

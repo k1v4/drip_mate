@@ -129,7 +129,7 @@ func (s *AuthUseCase) DeleteAccount(ctx context.Context, id string) (bool, error
 func (s *AuthUseCase) UpdateUserInfo(
 	ctx context.Context,
 	id string,
-	name, surname, username string,
+	name, surname, username, gender string,
 ) (*userEntity.User, error) {
 	const op = "service.UpdateUserInfo"
 
@@ -138,6 +138,7 @@ func (s *AuthUseCase) UpdateUserInfo(
 		Name:     name,
 		Surname:  surname,
 		Username: username,
+		Gender:   gender,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

@@ -28,7 +28,7 @@ type ISsoService interface {
 	UpdateUserInfo(
 		ctx context.Context,
 		id string,
-		name, surname, username string,
+		name, surname, username, gender string,
 	) (*entity.User, error)
 	SaveOutfit(ctx context.Context, userID uuid.UUID, saveItems entity.SaveOutfitRequest) (uuid.UUID, error)
 	GetOutfits(ctx context.Context, userID uuid.UUID) ([]entity.Outfit, error)
