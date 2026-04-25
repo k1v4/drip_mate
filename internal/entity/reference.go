@@ -8,6 +8,7 @@ type StyleType struct {
 type ColorType struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
+	Hex  string `json:"hex"`
 }
 
 type MusicType struct {

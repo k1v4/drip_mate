@@ -35,7 +35,7 @@ func (r *ReferenceRepository) GetStyles(ctx context.Context) ([]entity.StyleType
 }
 
 func (r *ReferenceRepository) GetColors(ctx context.Context) ([]entity.ColorType, error) {
-	rows, err := r.Pool.Query(ctx, `SELECT id, name FROM color_types ORDER BY name`)
+	rows, err := r.Pool.Query(ctx, `SELECT id, name, hex FROM color_types ORDER BY name`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get colors: %w", err)
 	}
@@ -44,7 +44,7 @@ func (r *ReferenceRepository) GetColors(ctx context.Context) ([]entity.ColorType
 	var colors []entity.ColorType
 	for rows.Next() {
 		var c entity.ColorType
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.Hex); err != nil {
 			return nil, fmt.Errorf("failed to scan color: %w", err)
 		}
 		colors = append(colors, c)
