@@ -23,7 +23,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - /c/Users/shang/Desktop/drip_mate_frontend/build:/usr/share/nginx/html
+      - C:\Users\shang\Desktop\drip_mate_frontend\build:/usr/share/nginx/html
     depends_on:
       - drip-mate
     networks:
