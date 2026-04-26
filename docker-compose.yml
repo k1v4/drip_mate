@@ -16,6 +16,19 @@ services:
     networks:
       - app-network
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - C:\Users\shang\Desktop\drip_mate_frontend\build:/usr/share/nginx/html
+    depends_on:
+      - drip-mate
+    networks:
+      - app-network
+
   postgres:
     image: postgres:17-alpine
     container_name: postgres_container
