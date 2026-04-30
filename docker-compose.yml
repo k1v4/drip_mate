@@ -22,6 +22,19 @@ services:
     networks:
       - app-network
 
+  drip-mate-ml:
+    image: k1vch/drip-mate-ml:1.0.0
+    container_name: drip-mate-ml
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - app-network
+
   nginx:
     image: nginx:alpine
     container_name: nginx
