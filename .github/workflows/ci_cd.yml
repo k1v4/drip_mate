@@ -90,6 +90,6 @@ jobs:
             export IMAGE_TAG=k1vch/drip-mate:${{ needs.build-and-push.outputs.image_tag }}
 
             docker compose pull drip-mate
-            docker compose up -d --no-deps drip-mate
+            docker compose up -d
 
             docker image prune -f
