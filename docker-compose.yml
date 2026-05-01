@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   drip-mate:
-    build: .
+    image: k1vch/drip-mate:latest
     container_name: drip-mate
     volumes:
       - ./config/config.yaml:/config/config.yaml
