@@ -15,7 +15,5 @@ COPY --from=builder /usr/local/src/migrations /migrations
 
 EXPOSE 8080 50051
 
-COPY .env /
-
 CMD ["/app", "-config=/config/config.yaml"]
 
