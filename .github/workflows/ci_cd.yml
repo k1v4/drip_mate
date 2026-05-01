@@ -85,11 +85,7 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
 
-            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-
-            export IMAGE_TAG=k1vch/drip-mate:${{ needs.build-and-push.outputs.image_tag }}
-
-            docker compose pull drip-mate
+            docker compose pull
             docker compose up -d
 
             docker image prune -f
