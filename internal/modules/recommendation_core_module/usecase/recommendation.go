@@ -2,14 +2,18 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/entity"
 	v1 "github.com/k1v4/drip_mate/internal/modules/clothing_catalog/controller/http/v1"
+	redispkg "github.com/k1v4/drip_mate/pkg/DataBase/redis"
 	"github.com/k1v4/drip_mate/pkg/adapter"
 	"github.com/k1v4/drip_mate/pkg/logger"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type IRecommendationRepository interface {
@@ -29,15 +33,24 @@ type RecommendationsUseCase struct {
 	weatherAdapter      *adapter.OpenWeatherAdapter
 	ml                  *adapter.MLClient
 	l                   logger.Logger
+	cache               *redis.Client
 }
 
-func NewRecommendationsUseCase(recommendationsRepo IRecommendationRepository, weatherAdapter *adapter.OpenWeatherAdapter, ml *adapter.MLClient, clothingUseCase v1.IClothingUseCase, l logger.Logger) *RecommendationsUseCase {
+func NewRecommendationsUseCase(
+	recommendationsRepo IRecommendationRepository,
+	weatherAdapter *adapter.OpenWeatherAdapter,
+	ml *adapter.MLClient,
+	clothingUseCase v1.IClothingUseCase,
+	l logger.Logger,
+	cache *redis.Client,
+) *RecommendationsUseCase {
 	return &RecommendationsUseCase{
 		recommendationsRepo: recommendationsRepo,
 		weatherAdapter:      weatherAdapter,
 		ml:                  ml,
 		clothingUseCase:     clothingUseCase,
 		l:                   l,
+		cache:               cache,
 	}
 }
 
@@ -47,11 +60,10 @@ func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, for
 		return nil, fmt.Errorf("GetUserProfile: %w", err)
 	}
 
-	weather, err := uc.weatherAdapter.GetCurrentWeather(ctx, city)
+	weather, err := uc.getWeather(ctx, city)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get weather: %w", err)
+		return nil, fmt.Errorf("getWeather: %w", err)
 	}
-
 	season := seasonFromContext(weather.Temperature, int(time.Now().Month()))
 
 	items, err := uc.ml.GetRecommendation(ctx, &entity.RequestData{
@@ -104,6 +116,46 @@ func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, for
 		Catalog: resultItems,
 		LogID:   logID,
 	}, nil
+}
+
+func (uc *RecommendationsUseCase) getWeather(ctx context.Context, city string) (*entity.Weather, error) {
+	var weather entity.Weather
+	var weatherPtr *entity.Weather
+	cachedWeather, err := uc.cache.Get(ctx, redispkg.GetWeatherCityKey(city)).Bytes()
+	if err != nil {
+		weatherPtr, err = uc.weatherAdapter.GetCurrentWeather(ctx, city)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get weather: %w", err)
+		}
+
+		go func(w *entity.Weather, city string) {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			data, err := json.Marshal(w)
+			if err != nil {
+				uc.l.Error(bgCtx, "failed to marshal weather", zap.Error(err))
+				return
+			}
+
+			if err = uc.cache.Set(bgCtx, redispkg.GetWeatherCityKey(city), data, 30*time.Minute).Err(); err != nil {
+				uc.l.Error(bgCtx, "failed to cache weather", zap.Error(err))
+			}
+		}(weatherPtr, city)
+	} else {
+		if err = json.Unmarshal(cachedWeather, &weather); err != nil {
+			uc.l.Error(ctx, "failed to unmarshal weather", zap.Error(err))
+
+			weatherPtr, err = uc.weatherAdapter.GetCurrentWeather(ctx, city)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get weather: %w", err)
+			}
+		} else {
+			weatherPtr = &weather
+		}
+	}
+
+	return weatherPtr, nil
 }
 
 func seasonFromContext(tempC float64, month int) string {
