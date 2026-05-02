@@ -54,6 +54,17 @@ type Recommendation struct {
 	WeatherApiToken string `yaml:"weather_api_token" env-required:"true"`
 }
 
+type RedisConfig struct {
+	Port        string        `json:"port" env:"REDIS_PORT" envDefault:"6379"`
+	Host        string        `json:"host" env:"REDIS_HOST" envDefault:"localhost"`
+	Password    string        `json:"password" env:"REDIS_PASSWORD" envDefault:"123"`
+	User        string        `json:"user" env:"REDIS_USER" envDefault:"root"`
+	DB          int           `json:"db" env:"REDIS_DB" envDefault:"0"`
+	MaxRetries  int           `json:"max_retries" env:"REDIS_MAX_RETRIES" envDefault:"3"`
+	DialTimeout time.Duration `json:"dial_timeout" env:"REDIS_DIAL_TIMEOUT" envDefault:"5s"`
+	Timeout     time.Duration `json:"timeout" env:"REDIS_TIMEOUT" envDefault:"5s"`
+}
+
 type Config struct {
 	Server         Server         `yaml:"server"`
 	DB             DB             `yaml:"db"`
@@ -63,6 +74,7 @@ type Config struct {
 	SMTP           SMTP           `yaml:"smtp"`
 	Hasher         Hasher         `yaml:"hasher"`
 	Recommendation Recommendation `yaml:"recommendation"`
+	RedisConfig    RedisConfig    `yaml:"redis"`
 }
 
 func MustLoadConfig() *Config {

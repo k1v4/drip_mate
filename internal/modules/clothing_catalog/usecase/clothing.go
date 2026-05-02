@@ -2,14 +2,18 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/k1v4/drip_mate/pkg/logger"
-
 	"github.com/k1v4/drip_mate/internal/entity"
 	objectTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
+	redispkg "github.com/k1v4/drip_mate/pkg/DataBase/redis"
 	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
+	"github.com/k1v4/drip_mate/pkg/logger"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type IClothingRepository interface {
@@ -28,6 +32,7 @@ type ClothingCatalogUseCase struct {
 	objectService objectTransport.IUploadService
 	kafkaProducer *kafkaPkg.Producer[entity.CatalogEvent]
 	l             logger.Logger
+	cache         *redis.Client
 }
 
 func NewClothingCatalogUseCase(
@@ -35,22 +40,43 @@ func NewClothingCatalogUseCase(
 	objectService objectTransport.IUploadService,
 	kafkaProducer *kafkaPkg.Producer[entity.CatalogEvent],
 	l logger.Logger,
+	cache *redis.Client,
 ) *ClothingCatalogUseCase {
 	return &ClothingCatalogUseCase{
 		repoClothing:  repoClothing,
 		objectService: objectService,
 		kafkaProducer: kafkaProducer,
 		l:             l,
+		cache:         cache,
 	}
 }
 
 func (uc *ClothingCatalogUseCase) GetItemByID(ctx context.Context, id uuid.UUID) (*entity.Catalog, error) {
 	const op = "ClothingCatalogUseCase.GetItemByID"
 
+	val, err := uc.cache.Get(ctx, redispkg.GetCatalogItemKey(id)).Bytes()
+	if err == nil {
+		var cached entity.Catalog
+		if err = json.Unmarshal(val, &cached); err == nil {
+			return &cached, nil
+		}
+	}
+
 	item, err := uc.repoClothing.GetItemByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		if data, err := json.Marshal(item); err == nil {
+			if err = uc.cache.Set(bgCtx, redispkg.GetCatalogItemKey(id), data, time.Hour).Err(); err != nil {
+				uc.l.Error(bgCtx, "failed to set cache", zap.Error(err))
+			}
+		}
+	}()
 
 	return item, nil
 }
@@ -75,6 +101,17 @@ func (uc *ClothingCatalogUseCase) CreateItem(ctx context.Context, req *entity.Cr
 	if err != nil {
 		uc.l.Error(ctx, fmt.Sprintf("failed to send create catalog event to ml: %v", err))
 	}
+
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		if data, err := json.Marshal(item); err == nil && item.ID != uuid.Nil {
+			if err = uc.cache.Set(bgCtx, redispkg.GetCatalogItemKey(item.ID), data, time.Hour).Err(); err != nil {
+				uc.l.Error(bgCtx, "failed to set cache", zap.Error(err))
+			}
+		}
+	}()
 
 	return item, nil
 }
@@ -118,6 +155,15 @@ func (uc *ClothingCatalogUseCase) UpdateItem(ctx context.Context, req *entity.Up
 		uc.l.Error(ctx, fmt.Sprintf("failed to send update catalog event to ml: %v", err))
 	}
 
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		if err := uc.cache.Del(bgCtx, redispkg.GetCatalogItemKey(req.ID)).Err(); err != nil {
+			uc.l.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
+		}
+	}()
+
 	return item, nil
 }
 
@@ -136,6 +182,15 @@ func (uc *ClothingCatalogUseCase) DeleteItem(ctx context.Context, id uuid.UUID) 
 	if err != nil {
 		uc.l.Error(ctx, fmt.Sprintf("failed to send delete catalog event to ml: %v", err))
 	}
+
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		if err := uc.cache.Del(bgCtx, redispkg.GetCatalogItemKey(id)).Err(); err != nil {
+			uc.l.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
+		}
+	}()
 
 	return nil
 }

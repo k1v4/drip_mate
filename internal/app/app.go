@@ -13,9 +13,6 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/k1v4/drip_mate/internal/entity"
-	"github.com/k1v4/drip_mate/pkg/auth/argon"
-	"github.com/k1v4/drip_mate/pkg/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -40,13 +37,17 @@ import (
 	grpcTransport "github.com/k1v4/drip_mate/internal/modules/object_gateway/transport/grpc"
 
 	"github.com/k1v4/drip_mate/internal/config"
+	"github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/internal/modules/notification_service"
 	"github.com/k1v4/drip_mate/internal/router"
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
+	redispkg "github.com/k1v4/drip_mate/pkg/DataBase/redis"
 	"github.com/k1v4/drip_mate/pkg/adapter"
+	"github.com/k1v4/drip_mate/pkg/auth/argon"
 	"github.com/k1v4/drip_mate/pkg/httpserver"
 	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/k1v4/drip_mate/pkg/logger"
+	"github.com/k1v4/drip_mate/pkg/validator"
 )
 
 func Run() {
@@ -69,6 +70,16 @@ func Run() {
 	}
 	defer pg.Close()
 	serviceLogger.Info(ctx, "connected to database successfully")
+
+	redisClient, err := redispkg.NewClient(ctx, new(cfg.RedisConfig))
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			serviceLogger.Error(ctx, fmt.Sprintf("close kafka producer error: %v", err))
+		}
+	}()
 
 	err = makeMigrate(cfg.DB.URL)
 	if err != nil {
@@ -136,12 +147,12 @@ func Run() {
 	referencesRepo := repositoryReference.NewReferenceRepository(pg)
 	recommendationRepo := repositoryRecommedation.NewRecommendationsRepository(pg)
 
-	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducerNotifications, new(cfg.Token), hasher)
+	authUseCase := serviceUser.NewAuthUseCase(authRepo, serviceLogger, kafkaProducerNotifications, new(cfg.Token), hasher, redisClient)
 	uploadService := serviceObject.NewUploadService(uploadRepo)
 	notifUseCase := serviceNotif.NewEmailNotificationUseCase(email, serviceLogger, templates)
-	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService, kafkaProducerCatalog, serviceLogger)
+	catalogUseCase := serviceCatalog.NewClothingCatalogUseCase(catalogRepo, uploadService, kafkaProducerCatalog, serviceLogger, redisClient)
 	referencesUseCase := serviceReference.NewReferenceUseCase(referencesRepo)
-	recommendationsUseCase := serviceRecommendation.NewRecommendationsUseCase(recommendationRepo, weather, ml, catalogUseCase, serviceLogger)
+	recommendationsUseCase := serviceRecommendation.NewRecommendationsUseCase(recommendationRepo, weather, ml, catalogUseCase, serviceLogger, redisClient)
 
 	notifController := controllerNotif.NewEmailController(notifUseCase)
 

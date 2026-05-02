@@ -85,7 +85,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := new(mocks.ISsoRepository)
-			authUC := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
+			authUC := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
 
 			mockRepo.On("GetUser", ctx, tc.email).Return(tc.mockUser, tc.mockError)
 
@@ -160,7 +160,7 @@ func TestAuthUseCase_Register(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
 
 			mockRepo.EXPECT().SaveUser(ctx, tc.email, mock.Anything).Return(tc.id, 0, tc.mockError).Once()
 
@@ -214,7 +214,7 @@ func TestAuthUseCase_DeleteAccount(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
 
 			mockRepo.
 				EXPECT().
@@ -306,7 +306,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher)
+			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
 
 			mockRepo.
 				EXPECT().

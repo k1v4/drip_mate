@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -11,10 +12,12 @@ import (
 	"github.com/k1v4/drip_mate/internal/entity"
 	userEntity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
+	redispkg "github.com/k1v4/drip_mate/pkg/DataBase/redis"
 	"github.com/k1v4/drip_mate/pkg/auth"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"
 	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/k1v4/drip_mate/pkg/logger"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -30,15 +33,24 @@ type AuthUseCase struct {
 	kafkaProducer *kafkaPkg.Producer[entity.NotificationEvent]
 	cfg           *config.Token
 	hasher        auth.PasswordHasher
+	cache         *redis.Client
 }
 
-func NewAuthUseCase(repo ISsoRepository, logger logger.Logger, kafkaProducer *kafkaPkg.Producer[entity.NotificationEvent], cfg *config.Token, hasher auth.PasswordHasher) *AuthUseCase {
+func NewAuthUseCase(
+	repo ISsoRepository,
+	logger logger.Logger,
+	kafkaProducer *kafkaPkg.Producer[entity.NotificationEvent],
+	cfg *config.Token,
+	hasher auth.PasswordHasher,
+	cache *redis.Client,
+) *AuthUseCase {
 	return &AuthUseCase{
 		repo:          repo,
 		logger:        logger,
 		kafkaProducer: kafkaProducer,
 		cfg:           cfg,
 		hasher:        hasher,
+		cache:         cache,
 	}
 }
 
@@ -125,6 +137,20 @@ func (s *AuthUseCase) DeleteAccount(ctx context.Context, id string) (bool, error
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		userUUID, err := uuid.Parse(id)
+		if err != nil {
+			s.logger.Error(ctx, fmt.Sprintf("failed to delete invalidate user cache: %s", err.Error()))
+			return
+		}
+		if err = s.cache.Del(bgCtx, redispkg.GetCatalogItemKey(userUUID)).Err(); err != nil {
+			s.logger.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
+		}
+	}()
+
 	return true, nil
 }
 
@@ -150,6 +176,20 @@ func (s *AuthUseCase) UpdateUserInfo(
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		userUUID, err := uuid.Parse(id)
+		if err != nil {
+			s.logger.Error(ctx, fmt.Sprintf("failed to delete invalidate user cache: %s", err.Error()))
+			return
+		}
+		if err = s.cache.Del(bgCtx, redispkg.GetCatalogItemKey(userUUID)).Err(); err != nil {
+			s.logger.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
+		}
+	}()
 
 	return user, nil
 }
@@ -179,6 +219,14 @@ func (s *AuthUseCase) UpdatePassword(ctx context.Context, id uuid.UUID, pass *us
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
+
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := s.cache.Del(bgCtx, redispkg.GetCatalogItemKey(id)).Err(); err != nil {
+			s.logger.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
+		}
+	}()
 
 	return nil
 }
@@ -236,10 +284,29 @@ func (s *AuthUseCase) UpdateContext(ctx context.Context, userID uuid.UUID, req *
 func (s *AuthUseCase) GetUserByID(ctx context.Context, userID uuid.UUID) (*userEntity.User, error) {
 	const op = "service.GetUserByID"
 
+	val, err := s.cache.Get(ctx, redispkg.GetCatalogItemKey(userID)).Bytes()
+	if err == nil {
+		var cached userEntity.User
+		if err = json.Unmarshal(val, &cached); err == nil {
+			return &cached, nil
+		}
+	}
+
 	user, err := s.repo.GetUserById(ctx, userID.String())
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		if data, err := json.Marshal(user); err == nil {
+			if err = s.cache.Set(bgCtx, redispkg.GetCatalogItemKey(userID), data, time.Hour).Err(); err != nil {
+				s.logger.Error(bgCtx, "failed to set cache", zap.Error(err))
+			}
+		}
+	}()
 
 	return user, nil
 }
