@@ -516,6 +516,53 @@ func (_c *ISsoRepository_UpdateUserContext_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// UpdateUserOutfitLog provides a mock function with given fields: ctx, logID
+func (_m *ISsoRepository) UpdateUserOutfitLog(ctx context.Context, logID int) error {
+	ret := _m.Called(ctx, logID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateUserOutfitLog")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) error); ok {
+		r0 = rf(ctx, logID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ISsoRepository_UpdateUserOutfitLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateUserOutfitLog'
+type ISsoRepository_UpdateUserOutfitLog_Call struct {
+	*mock.Call
+}
+
+// UpdateUserOutfitLog is a helper method to define mock.On call
+//   - ctx context.Context
+//   - logID int
+func (_e *ISsoRepository_Expecter) UpdateUserOutfitLog(ctx interface{}, logID interface{}) *ISsoRepository_UpdateUserOutfitLog_Call {
+	return &ISsoRepository_UpdateUserOutfitLog_Call{Call: _e.mock.On("UpdateUserOutfitLog", ctx, logID)}
+}
+
+func (_c *ISsoRepository_UpdateUserOutfitLog_Call) Run(run func(ctx context.Context, logID int)) *ISsoRepository_UpdateUserOutfitLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *ISsoRepository_UpdateUserOutfitLog_Call) Return(_a0 error) *ISsoRepository_UpdateUserOutfitLog_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ISsoRepository_UpdateUserOutfitLog_Call) RunAndReturn(run func(context.Context, int) error) *ISsoRepository_UpdateUserOutfitLog_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateUserPersonal provides a mock function with given fields: ctx, newUser
 func (_m *ISsoRepository) UpdateUserPersonal(ctx context.Context, newUser *entity.UpdatePersonal) (string, error) {
 	ret := _m.Called(ctx, newUser)

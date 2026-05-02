@@ -637,3 +637,30 @@ func (a *AuthRepository) UpdateUserContext(ctx context.Context, req *entity.Upda
 
 	return nil
 }
+
+func (a *AuthRepository) UpdateUserOutfitLog(ctx context.Context, logID int) error {
+	const op = "repository.UpdateUserOutfitLog"
+
+	err := postgres.WithTx(ctx, a.Pool, func(tx pgx.Tx) error {
+		builder := a.Builder.Update("user_interactions").
+			Set("event_type", "save") // TODO переделать в константу
+
+		sqlReq, args, err := builder.
+			Where(sq.Eq{"recommendation_log_id": logID}).
+			ToSql()
+		if err != nil {
+			return fmt.Errorf("%s: build sql: %w", op, err)
+		}
+
+		if _, err = tx.Exec(ctx, sqlReq, args...); err != nil {
+			return fmt.Errorf("%s: exec: %w", op, err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

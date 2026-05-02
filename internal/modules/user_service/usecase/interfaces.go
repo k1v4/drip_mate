@@ -19,6 +19,7 @@ type ISsoRepository interface {
 	DeleteOutfit(ctx context.Context, userID, outfitID uuid.UUID) error
 	UpdatePassword(ctx context.Context, userID uuid.UUID, newPasswordHash string) error
 	UpdateUserContext(ctx context.Context, req *entity.UpdateContext) error
+	UpdateUserOutfitLog(ctx context.Context, logID int) error
 }
 
 type ISsoService interface {

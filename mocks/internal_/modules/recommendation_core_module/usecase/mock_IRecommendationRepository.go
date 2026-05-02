@@ -90,6 +90,66 @@ func (_c *IRecommendationRepository_GetUserProfile_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// SaveRecommendationLog provides a mock function with given fields: ctx, userID, outfits, modelPhase, reqContext
+func (_m *IRecommendationRepository) SaveRecommendationLog(ctx context.Context, userID uuid.UUID, outfits []uuid.UUID, modelPhase string, reqContext *entity.RecommendationContext) (int, error) {
+	ret := _m.Called(ctx, userID, outfits, modelPhase, reqContext)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveRecommendationLog")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []uuid.UUID, string, *entity.RecommendationContext) (int, error)); ok {
+		return rf(ctx, userID, outfits, modelPhase, reqContext)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []uuid.UUID, string, *entity.RecommendationContext) int); ok {
+		r0 = rf(ctx, userID, outfits, modelPhase, reqContext)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []uuid.UUID, string, *entity.RecommendationContext) error); ok {
+		r1 = rf(ctx, userID, outfits, modelPhase, reqContext)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// IRecommendationRepository_SaveRecommendationLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SaveRecommendationLog'
+type IRecommendationRepository_SaveRecommendationLog_Call struct {
+	*mock.Call
+}
+
+// SaveRecommendationLog is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - outfits []uuid.UUID
+//   - modelPhase string
+//   - reqContext *entity.RecommendationContext
+func (_e *IRecommendationRepository_Expecter) SaveRecommendationLog(ctx interface{}, userID interface{}, outfits interface{}, modelPhase interface{}, reqContext interface{}) *IRecommendationRepository_SaveRecommendationLog_Call {
+	return &IRecommendationRepository_SaveRecommendationLog_Call{Call: _e.mock.On("SaveRecommendationLog", ctx, userID, outfits, modelPhase, reqContext)}
+}
+
+func (_c *IRecommendationRepository_SaveRecommendationLog_Call) Run(run func(ctx context.Context, userID uuid.UUID, outfits []uuid.UUID, modelPhase string, reqContext *entity.RecommendationContext)) *IRecommendationRepository_SaveRecommendationLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].([]uuid.UUID), args[3].(string), args[4].(*entity.RecommendationContext))
+	})
+	return _c
+}
+
+func (_c *IRecommendationRepository_SaveRecommendationLog_Call) Return(_a0 int, _a1 error) *IRecommendationRepository_SaveRecommendationLog_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *IRecommendationRepository_SaveRecommendationLog_Call) RunAndReturn(run func(context.Context, uuid.UUID, []uuid.UUID, string, *entity.RecommendationContext) (int, error)) *IRecommendationRepository_SaveRecommendationLog_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewIRecommendationRepository creates a new instance of IRecommendationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewIRecommendationRepository(t interface {

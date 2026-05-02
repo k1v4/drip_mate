@@ -118,7 +118,6 @@ CREATE TABLE user_interactions (
                                    outfit_items          JSONB       NOT NULL,
     -- save | skip
                                    event_type            VARCHAR(16) NOT NULL,
-                                   dwell_time_ms         INT,
     -- season, style, occasion
                                    context_snapshot      JSONB,
                                    created_at            TIMESTAMP   NOT NULL DEFAULT now()

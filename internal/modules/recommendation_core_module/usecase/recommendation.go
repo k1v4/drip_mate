@@ -14,6 +14,13 @@ import (
 
 type IRecommendationRepository interface {
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (*entity.UserProfile, string, error)
+	SaveRecommendationLog(
+		ctx context.Context,
+		userID uuid.UUID,
+		outfits []uuid.UUID,
+		modelPhase string,
+		reqContext *entity.RecommendationContext,
+	) (int, error)
 }
 
 type RecommendationsUseCase struct {
@@ -34,7 +41,7 @@ func NewRecommendationsUseCase(recommendationsRepo IRecommendationRepository, we
 	}
 }
 
-func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, formality int, userID uuid.UUID) ([]entity.Catalog, error) {
+func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, formality int, userID uuid.UUID) (*entity.RecommendationsCatalogRequest, error) {
 	profile, city, err := uc.recommendationsRepo.GetUserProfile(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("GetUserProfile: %w", err)
@@ -49,7 +56,7 @@ func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, for
 
 	items, err := uc.ml.GetRecommendation(ctx, &entity.RequestData{
 		UserProfile: *profile,
-		Context: entity.Context{
+		Context: entity.RecommendationContext{
 			Season:    season,
 			Formality: formality,
 		},
@@ -59,7 +66,18 @@ func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, for
 		return nil, fmt.Errorf("recommend: ml client: %w", err)
 	}
 
+	reqContext := &entity.RecommendationContext{
+		Season:      season,
+		Formality:   formality,
+		Styles:      profile.Styles,
+		Colors:      profile.Colors,
+		MusicGenres: profile.MusicGenres,
+		Gender:      profile.GenderPref,
+	}
+
 	resultItems := make([]entity.Catalog, 0, len(items))
+	outfitsForLog := make([]uuid.UUID, 0, len(items))
+	// TODO переделать под один запрос в бд
 	for _, item := range items {
 		uuidItem, err := uuid.Parse(item.ItemID)
 		if err != nil {
@@ -74,9 +92,18 @@ func (uc *RecommendationsUseCase) GetUserRecommendation(ctx context.Context, for
 		}
 
 		resultItems = append(resultItems, *clothingItem)
+		outfitsForLog = append(outfitsForLog, uuidItem)
 	}
 
-	return resultItems, nil
+	logID, err := uc.recommendationsRepo.SaveRecommendationLog(ctx, userID, outfitsForLog, "fm", reqContext)
+	if err != nil {
+		uc.l.Error(ctx, fmt.Sprintf("failed to save recommendation log: %s", err))
+	}
+
+	return &entity.RecommendationsCatalogRequest{
+		Catalog: resultItems,
+		LogID:   logID,
+	}, nil
 }
 
 func seasonFromContext(tempC float64, month int) string {
