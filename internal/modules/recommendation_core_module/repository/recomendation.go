@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/k1v4/drip_mate/internal/entity"
 	"github.com/k1v4/drip_mate/pkg/DataBase/postgres"
 )
@@ -15,14 +17,6 @@ type RecommendationsRepository struct {
 
 func NewRecommendationsRepository(pg *postgres.Postgres) *RecommendationsRepository {
 	return &RecommendationsRepository{pg}
-}
-
-type userProfileRow struct {
-	Gender      string   `db:"gender"`
-	Styles      []string `db:"styles"`
-	Colors      []string `db:"colors"`
-	MusicGenres []string `db:"music_genres"`
-	City        string   `db:"city"`
 }
 
 func (r *RecommendationsRepository) GetUserProfile(ctx context.Context, userID uuid.UUID) (*entity.UserProfile, string, error) {
@@ -43,24 +37,57 @@ func (r *RecommendationsRepository) GetUserProfile(ctx context.Context, userID u
         WHERE u.id = $1
         GROUP BY u.id, u.gender, u.city`
 
-	var row userProfileRow
+	var profile entity.UserProfile
+	var city string
+
 	err := r.Pool.QueryRow(ctx, query, userID).Scan(
-		&row.Gender,
-		&row.Styles,
-		&row.Colors,
-		&row.MusicGenres,
-		&row.City,
+		&profile.GenderPref,
+		&profile.Styles,
+		&profile.Colors,
+		&profile.MusicGenres,
+		&city,
 	)
 	if err != nil {
 		return nil, "", fmt.Errorf("get user profile: %w", err)
 	}
 
-	profile := &entity.UserProfile{
-		GenderPref:  row.Gender,
-		Styles:      row.Styles,
-		Colors:      row.Colors,
-		MusicGenres: row.MusicGenres,
+	return &profile, city, nil
+}
+
+func (r *RecommendationsRepository) SaveRecommendationLog(ctx context.Context, userID uuid.UUID, outfits []uuid.UUID, modelPhase string, reqContext *entity.RecommendationContext) (int, error) {
+	outfitsJSON, err := json.Marshal(outfits)
+	if err != nil {
+		return 0, fmt.Errorf("marshal outfits: %w", err)
 	}
 
-	return profile, row.City, nil
+	contextJSON, err := json.Marshal(reqContext)
+	if err != nil {
+		return 0, fmt.Errorf("marshal context: %w", err)
+	}
+
+	var logID int
+	if err = postgres.WithTx(ctx, r.Pool, func(tx pgx.Tx) error {
+		err = tx.QueryRow(ctx, `
+			INSERT INTO recommendation_log (user_id, outfits_shown, model_phase, request_context)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id
+		`, userID, outfitsJSON, modelPhase, contextJSON).Scan(&logID)
+		if err != nil {
+			return fmt.Errorf("insert recommendation_log: %w", err)
+		}
+
+		_, err = tx.Exec(ctx, `
+			INSERT INTO user_interactions (user_id, recommendation_log_id, outfit_items, event_type, context_snapshot)
+			VALUES ($1, $2, $3, 'skip', $4)
+		`, userID, logID, outfitsJSON, contextJSON)
+		if err != nil {
+			return fmt.Errorf("insert user_interactions: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return 0, fmt.Errorf("save recommendation log: %w", err)
+	}
+
+	return logID, nil
 }

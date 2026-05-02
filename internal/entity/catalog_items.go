@@ -25,6 +25,11 @@ type Catalog struct {
 	Styles []string `db:"-" json:"styles"`
 }
 
+type RecommendationsCatalogRequest struct {
+	Catalog []Catalog `json:"catalog"`
+	LogID   int       `json:"log_id"`
+}
+
 type CreateCatalogRequest struct {
 	Name           string  `json:"name" form:"name"            validate:"required"`
 	CategoryID     int     `json:"category_id" form:"category_id"     validate:"required"`

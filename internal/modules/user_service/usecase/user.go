@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/k1v4/drip_mate/internal/config"
@@ -14,6 +15,7 @@ import (
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"
 	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/k1v4/drip_mate/pkg/logger"
+	"go.uber.org/zap"
 )
 
 var (
@@ -185,6 +187,17 @@ func (s *AuthUseCase) SaveOutfit(ctx context.Context, userID uuid.UUID, saveItem
 	outfitUUID, err := s.repo.SaveOutfit(ctx, userID, saveItems)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to save outfit: %w", err)
+	}
+
+	if saveItems.LogID > 0 {
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if err := s.repo.UpdateUserOutfitLog(bgCtx, saveItems.LogID); err != nil {
+				s.logger.Error(bgCtx, "failed to update outfit log", zap.Error(err))
+			}
+		}()
 	}
 
 	return outfitUUID, nil

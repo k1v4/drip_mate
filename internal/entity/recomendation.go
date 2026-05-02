@@ -7,15 +7,19 @@ type UserProfile struct {
 	MusicGenres []string `json:"music_genres" db:"music_genres"`
 }
 
-type Context struct {
-	Season    string `json:"season" db:"season"`
-	Formality int    `json:"formality" db:"formality"`
+type RecommendationContext struct {
+	Season      string   `json:"season"`
+	Formality   int      `json:"formality"`
+	Styles      []string `json:"styles"`
+	Colors      []string `json:"colors"`
+	MusicGenres []string `json:"music_genres"`
+	Gender      string   `json:"gender"`
 }
 
 type RequestData struct {
-	UserProfile UserProfile `json:"user_profile" db:"user_profile"`
-	Context     Context     `json:"context" db:"context"`
-	K           int         `json:"k" db:"k"`
+	UserProfile UserProfile           `json:"user_profile" db:"user_profile"`
+	Context     RecommendationContext `json:"context" db:"context"`
+	K           int                   `json:"k" db:"k"`
 }
 
 type OutfitItem struct {

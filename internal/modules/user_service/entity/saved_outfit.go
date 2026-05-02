@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type SaveOutfitRequest struct {
 	Name           string      `json:"name"             validate:"required,min=1,max=255"`
 	CatalogItemIDs []uuid.UUID `json:"catalog_item_ids" validate:"required,min=1,dive,required"`
+	LogID          int         `json:"log_id"           validate:"omitempty"`
 }
 
 type OutfitItem struct {
