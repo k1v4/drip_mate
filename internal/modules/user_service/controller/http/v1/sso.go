@@ -90,7 +90,7 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 		Value:    accessToken,
 		HttpOnly: true,
 		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 		MaxAge:   int(r.cfg.TTL.Seconds()),
 	})
@@ -131,7 +131,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 		Value:    accessToken,
 		HttpOnly: true,
 		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 		MaxAge:   int(r.cfg.TTL.Seconds()),
 	})
@@ -198,7 +198,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 		Value:    "",
 		HttpOnly: true,
 		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 		MaxAge:   -1,
 	})
