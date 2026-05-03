@@ -11,6 +11,7 @@ import (
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	middlewareJWT "github.com/k1v4/drip_mate/internal/router/middleware"
+	_ "github.com/k1v4/drip_mate/internal/swagger"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/logger"
 	"github.com/labstack/echo/v4"
@@ -25,37 +26,30 @@ type containerRoutes struct {
 func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, cfg *config.Token) {
 	r := &containerRoutes{t, l, cfg}
 
-	// POST /api/v1/login
 	handler.POST("/login", r.Auth)
-
-	// POST /api/v1/register
 	handler.POST("/register", r.Register)
-
-	// DELETE  /api/v1/users
 	handler.DELETE("/users", r.DeleteAccount, middlewareJWT.JWTAuth(cfg))
-
-	// POST  /api/v1/users/outfit
 	handler.POST("/users/outfit", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
-
-	// GET  /api/v1/users/outfit
 	handler.GET("/users/outfit", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
-
-	// GET  /api/v1/users
 	handler.GET("/users", r.GetUserByID, middlewareJWT.JWTAuth(cfg))
-
-	// DELETE  /api/v1/users/outfit
 	handler.DELETE("/users/outfit/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
-
-	// POST  /api/v1/auth/change-password
 	handler.POST("/auth/change-password", r.PassChange, middlewareJWT.JWTAuth(cfg))
-
-	// PATCH  /api/v1/me/profile
 	handler.PATCH("/me/profile", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
-
-	// PATCH  /api/v1/me/context
 	handler.PATCH("/me/context", r.UpdateUserContext, middlewareJWT.JWTAuth(cfg))
 }
 
+// Auth godoc
+// @Summary      Login user
+// @Description  Authenticates user by email and password, sets access_token cookie
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      entity.LoginRequest   true  "Login credentials"
+// @Success      200   {object}  entity.LoginResponse
+// @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      401   {object}  swagger.ErrorResponse
+// @Failure      500   {object}  swagger.ErrorResponse
+// @Router       /login [post]
 func (r *containerRoutes) Auth(c echo.Context) error {
 	const op = "controller.Auth"
 	ctx := c.Request().Context()
@@ -100,6 +94,18 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 	})
 }
 
+// Register godoc
+// @Summary      Register user
+// @Description  Creates a new user account and sets access_token cookie
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      entity.RegisterRequest  true  "Registration data"
+// @Success      200   {object}  entity.LoginResponse
+// @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      409   {object}  swagger.ErrorResponse
+// @Failure      500   {object}  swagger.ErrorResponse
+// @Router       /register [post]
 func (r *containerRoutes) Register(c echo.Context) error {
 	const op = "controller.Register"
 
@@ -141,6 +147,18 @@ func (r *containerRoutes) Register(c echo.Context) error {
 	})
 }
 
+// UpdateUserInfo godoc
+// @Summary      Update personal info
+// @Description  Updates user's name, surname, username and gender
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body      entity.UpdatePersonal  true  "Personal info"
+// @Success      200   {object}  entity.UpdateUserResponse
+// @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      500   {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /me/profile [patch]
 func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 	const op = "controller.UpdateUserInfo"
 
@@ -165,6 +183,16 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 	})
 }
 
+// GetUserByID godoc
+// @Summary      Get current user
+// @Description  Returns profile of the authenticated user
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  entity.User
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /users [get]
 func (r *containerRoutes) GetUserByID(c echo.Context) error {
 	ctx := c.Request().Context()
 	userID := c.Get(middlewareJWT.UserIDKey).(string)
@@ -181,6 +209,15 @@ func (r *containerRoutes) GetUserByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+// DeleteAccount godoc
+// @Summary      Delete account
+// @Description  Permanently deletes the authenticated user's account and clears cookie
+// @Tags         users
+// @Produce      json
+// @Success      200  {object}  entity.DeleteUserResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /users [delete]
 func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	const op = "controller.DeleteAccount"
 	ctx := c.Request().Context()
@@ -208,6 +245,18 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 	})
 }
 
+// SaveOutfit godoc
+// @Summary      Save outfit
+// @Description  Saves a new outfit for the authenticated user
+// @Tags         outfits
+// @Accept       json
+// @Produce      json
+// @Param        body  body      entity.SaveOutfitRequest  true  "Outfit data"
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      500   {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /users/outfit [post]
 func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 	const op = "controller.SaveOutfit"
 
@@ -239,6 +288,16 @@ func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 	})
 }
 
+// GetOutfits godoc
+// @Summary      Get outfits
+// @Description  Returns all saved outfits of the authenticated user
+// @Tags         outfits
+// @Produce      json
+// @Success      200  {array}   entity.Outfit
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /users/outfit [get]
 func (r *containerRoutes) GetOutfits(c echo.Context) error {
 	const op = "controller.GetOutfits"
 	ctx := c.Request().Context()
@@ -258,6 +317,17 @@ func (r *containerRoutes) GetOutfits(c echo.Context) error {
 	return c.JSON(http.StatusOK, outfits)
 }
 
+// DeleteOutfit godoc
+// @Summary      Delete outfit
+// @Description  Deletes a specific outfit by ID for the authenticated user
+// @Tags         outfits
+// @Produce      json
+// @Param        id   path  string  true  "Outfit UUID"
+// @Success      204
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /users/outfit/{id} [delete]
 func (r *containerRoutes) DeleteOutfit(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -284,6 +354,18 @@ func (r *containerRoutes) DeleteOutfit(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// PassChange godoc
+// @Summary      Change password
+// @Description  Updates the authenticated user's password
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body  entity.UpdatePass  true  "Password update data"
+// @Success      200
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /auth/change-password [post]
 func (r *containerRoutes) PassChange(c echo.Context) error {
 	const op = "Controller.PassChange"
 	ctx := c.Request().Context()
@@ -321,6 +403,18 @@ func (r *containerRoutes) PassChange(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+// UpdateUserContext godoc
+// @Summary      Update user context
+// @Description  Updates additional context/preferences for the authenticated user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body  entity.UpdateContext  true  "User context data"
+// @Success      200
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /me/context [patch]
 func (r *containerRoutes) UpdateUserContext(c echo.Context) error {
 	const op = "controller.UpdateUserContext"
 	ctx := c.Request().Context()
