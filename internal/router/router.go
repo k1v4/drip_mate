@@ -34,7 +34,7 @@ func NewRouter(
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 	token := new(cfg.Token)
-	handler.GET("/api/swagger/*", echoSwagger.WrapHandler)
+	handler.GET("/api/v1/swagger/*", echoSwagger.WrapHandler)
 
 	h := handler.Group("/api/v1")
 	{
