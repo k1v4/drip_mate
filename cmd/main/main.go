@@ -8,7 +8,7 @@ import (
 // @title           Drip Mate API
 // @version         1.0
 // @description     Outfit recommendation service
-// @host            localhost:8080
+// @host
 // @BasePath        /api/v1
 // @securityDefinitions.apikey CookieAuth
 // @in cookie
