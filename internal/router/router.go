@@ -10,6 +10,7 @@ import (
 	v1user "github.com/k1v4/drip_mate/internal/modules/user_service/controller/http/v1"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/logger"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
 	_ "github.com/k1v4/drip_mate/docs"
@@ -29,12 +30,15 @@ func NewRouter(
 	// Middleware
 	handler.Use(middleware.RequestLogger())
 	handler.Use(middleware.Recover())
+	handler.Use(echoprometheus.NewMiddleware("drip_mate"))
+
+	token := new(cfg.Token)
 
 	handler.GET("/api/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
-	token := new(cfg.Token)
 	handler.GET("/api/v1/swagger/*", echoSwagger.WrapHandler)
+	handler.GET("/api/v1/metrics", echoprometheus.NewHandler())
 
 	h := handler.Group("/api/v1")
 	{
