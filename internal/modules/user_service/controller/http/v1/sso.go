@@ -156,6 +156,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 // @Param        body  body      entity.UpdatePersonal  true  "Personal info"
 // @Success      200   {object}  entity.UpdateUserResponse
 // @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /me/profile [patch]
@@ -190,6 +191,7 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 // @Produce      json
 // @Success      200  {object}  entity.User
 // @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /users [get]
@@ -215,6 +217,7 @@ func (r *containerRoutes) GetUserByID(c echo.Context) error {
 // @Tags         users
 // @Produce      json
 // @Success      200  {object}  entity.DeleteUserResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /users [delete]
@@ -254,6 +257,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 // @Param        body  body      entity.SaveOutfitRequest  true  "Outfit data"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /users/outfit [post]
@@ -295,6 +299,7 @@ func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   entity.Outfit
 // @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /users/outfit [get]
@@ -325,6 +330,7 @@ func (r *containerRoutes) GetOutfits(c echo.Context) error {
 // @Param        id   path  string  true  "Outfit UUID"
 // @Success      204
 // @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /users/outfit/{id} [delete]
@@ -412,6 +418,7 @@ func (r *containerRoutes) PassChange(c echo.Context) error {
 // @Param        body  body  entity.UpdateContext  true  "User context data"
 // @Success      200
 // @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /me/context [patch]

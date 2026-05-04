@@ -39,6 +39,7 @@ func NewRecommendationRoutes(handler *echo.Group, t IRecommendationUseCase, l lo
 // @Param        body  body      entity.RecommendationRequest  true  "Recommendation request"
 // @Success      200   {object}  entity.RecommendationsCatalogRequest
 // @Failure      400   {object}  swagger.ErrorResponse
+// @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      422   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth

@@ -391,6 +391,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
         "422":
           description: Unprocessable Entity
           schema:
@@ -420,6 +424,10 @@ paths:
           description: No Content
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "404":
@@ -452,6 +460,10 @@ paths:
             $ref: '#/definitions/entity.Catalog'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "404":
@@ -496,6 +508,10 @@ paths:
             $ref: '#/definitions/entity.Catalog'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "404":
@@ -543,6 +559,10 @@ paths:
               total:
                 type: integer
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -607,6 +627,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -637,6 +661,10 @@ paths:
             $ref: '#/definitions/entity.UpdateUserResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "500":
@@ -670,6 +698,10 @@ paths:
             $ref: '#/definitions/entity.RecommendationsCatalogRequest'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "422":
@@ -825,6 +857,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entity.DeleteUserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -845,6 +881,10 @@ paths:
             $ref: '#/definitions/entity.User'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "500":
@@ -870,6 +910,10 @@ paths:
             type: array
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "500":
@@ -905,6 +949,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -930,6 +978,10 @@ paths:
           description: No Content
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/swagger.ErrorResponse'
         "500":

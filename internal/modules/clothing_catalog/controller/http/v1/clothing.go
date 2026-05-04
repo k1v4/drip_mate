@@ -59,6 +59,7 @@ func NewCatalogRoutes(handler *echo.Group, t IClothingUseCase, l logger.Logger, 
 // @Param        id   path      string  true  "Item UUID"
 // @Success      200  {object}  entity.Catalog
 // @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      404  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
@@ -91,6 +92,7 @@ func (r *containerRoutes) GetItem(c echo.Context) error {
 // @Param        id   path      string  true  "Item UUID"
 // @Success      204
 // @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      404  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
@@ -126,6 +128,7 @@ func (r *containerRoutes) DeleteItem(c echo.Context) error {
 // @Param        image  formData  file    false "Image file"
 // @Success      200    {object}  entity.Catalog
 // @Failure      400    {object}  swagger.ErrorResponse
+// @Failure      401    {object}  swagger.ErrorResponse
 // @Failure      404    {object}  swagger.ErrorResponse
 // @Failure      422    {object}  swagger.ErrorResponse
 // @Failure      500    {object}  swagger.ErrorResponse
@@ -192,6 +195,7 @@ func (r *containerRoutes) UpdateItem(c echo.Context) error {
 // @Param        image  formData  file    true  "Image file"
 // @Success      201    {object}  string
 // @Failure      400    {object}  swagger.ErrorResponse
+// @Failure      401   	{object}  swagger.ErrorResponse
 // @Failure      422    {object}  swagger.ErrorResponse
 // @Failure      500    {object}  swagger.ErrorResponse
 // @Security     CookieAuth
@@ -242,6 +246,7 @@ func (r *containerRoutes) CreateItem(c echo.Context) error {
 // @Param        page   query     int  false  "Page number" default(1)
 // @Param        limit  query     int  false  "Items per page" default(10)
 // @Success      200    {object}  object{items=[]entity.Catalog,total=int}
+// @Failure      401   	{object}  swagger.ErrorResponse
 // @Failure      500    {object}  swagger.ErrorResponse
 // @Security     CookieAuth
 // @Router       /catalog/all [get]
