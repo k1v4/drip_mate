@@ -292,7 +292,6 @@ func ensureTopics(ctx context.Context, broker string, topics ...string) error {
 	}
 
 	if err = controllerConn.CreateTopics(configs...); err != nil {
-		// если топик уже существует — не ошибка
 		if !errors.Is(err, kafka.TopicAlreadyExists) {
 			return fmt.Errorf("create topics: %w", err)
 		}
