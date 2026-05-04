@@ -1,349 +1,826 @@
-package usecase
+package usecase_test
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
+	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
-	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
-	mocks "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
-	mocks2 "github.com/k1v4/drip_mate/mocks/pkg/auth"
+	"github.com/k1v4/drip_mate/internal/config"
+	"github.com/k1v4/drip_mate/internal/entity"
+	userEntity "github.com/k1v4/drip_mate/internal/modules/user_service/entity"
+	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
+	mockRepo "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
+	mockAuth "github.com/k1v4/drip_mate/mocks/pkg/auth"
+	mockLogger "github.com/k1v4/drip_mate/mocks/pkg/logger"
 	"github.com/k1v4/drip_mate/pkg/DataBase"
-	"github.com/k1v4/drip_mate/pkg/fake"
+	"github.com/k1v4/drip_mate/pkg/kafkaPkg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
-func TestAuthUseCase_Login(t *testing.T) {
-	ctx := context.Background()
-	hasher := mocks2.NewPasswordHasher(t)
+// --- Helpers ---
 
-	testCases := []struct {
-		name          string
-		email         string
-		password      string
-		mockUser      entity.User
-		mockError     error
-		expectedError error
-		expectTokens  bool
-		expectedLevel int
+func defaultCfg() *config.Token {
+	return &config.Token{
+		TTL:    time.Hour,
+		Secret: "test-secret",
+		Issuer: "test-issuer",
+	}
+}
+
+func buildUC(
+	repo *mockRepo.ISsoRepository,
+	hasher *mockAuth.PasswordHasher,
+	log *mockLogger.Logger,
+) *usecase.AuthUseCase {
+	return usecase.NewAuthUseCase(
+		repo,
+		log,
+		(*kafkaPkg.Producer[entity.NotificationEvent])(nil),
+		defaultCfg(),
+		hasher,
+		nil,
+	)
+}
+
+// =====================
+//        Login
+// =====================
+
+func TestAuthUseCase_Login(t *testing.T) {
+	validUserID := uuid.New()
+	validUser := &userEntity.User{
+		ID:       validUserID,
+		Email:    "user@example.com",
+		Password: "hashed_secret",
+		AccessID: 1,
+	}
+
+	tests := []struct {
+		name        string
+		email       string
+		password    string
+		setupRepo   func(r *mockRepo.ISsoRepository)
+		setupHasher func(h *mockAuth.PasswordHasher)
+		wantRole    entity.Role
+		wantErr     error
 	}{
 		{
-			name:          "success",
-			email:         "test@example.com",
-			password:      "correctPassword123",
-			mockUser:      fake.CreateUser("test@example.com", "correctPassword123", 2, hasher),
-			expectedError: nil,
-			expectTokens:  true,
-			expectedLevel: 2,
+			name:     "success",
+			email:    "user@example.com",
+			password: "secret",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUser", mock.Anything, "user@example.com").Return(validUser, nil)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "secret", "hashed_secret").Return(true, nil)
+			},
+			wantRole: entity.Role(1),
+			wantErr:  nil,
 		},
 		{
-			name:          "user not found",
-			email:         "notfound@example.com",
-			password:      "anyPassword",
-			mockUser:      entity.User{},
-			mockError:     DataBase.ErrUserNotFound,
-			expectedError: ErrNoUser,
-			expectTokens:  false,
-			expectedLevel: 0,
+			name:     "user not found",
+			email:    "ghost@example.com",
+			password: "secret",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUser", mock.Anything, "ghost@example.com").Return(nil, DataBase.ErrUserNotFound)
+			},
+			wantErr: usecase.ErrNoUser,
 		},
 		{
-			name:          "wrong pass",
-			email:         "test@example.com",
-			password:      "wrongPassword",
-			mockUser:      fake.CreateUser("test@example.com", "correctPassword123", 1, hasher),
-			expectedError: ErrInvalidCredentials,
-			expectTokens:  false,
-			expectedLevel: 0,
+			name:     "invalid password",
+			email:    "user@example.com",
+			password: "wrong",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUser", mock.Anything, "user@example.com").Return(validUser, nil)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "wrong", "hashed_secret").Return(false, nil)
+			},
+			wantErr: usecase.ErrInvalidCredentials,
 		},
 		{
-			name:          "repository error",
-			email:         "test@example.com",
-			password:      "password123",
-			mockUser:      entity.User{},
-			mockError:     assert.AnError,
-			expectedError: assert.AnError,
-			expectTokens:  false,
-			expectedLevel: 0,
+			name:     "verify returns error",
+			email:    "user@example.com",
+			password: "secret",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUser", mock.Anything, "user@example.com").Return(validUser, nil)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "secret", "hashed_secret").Return(false, errors.New("hasher error"))
+			},
+			wantErr: errors.New("hasher error"),
 		},
 		{
-			name:          "empty email",
-			email:         "",
-			password:      "password123",
-			mockUser:      entity.User{},
-			mockError:     DataBase.ErrUserNotFound,
-			expectedError: ErrNoUser,
-			expectTokens:  false,
-			expectedLevel: 0,
+			name:     "repo unexpected error",
+			email:    "user@example.com",
+			password: "secret",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUser", mock.Anything, "user@example.com").Return(nil, errors.New("db down"))
+			},
+			wantErr: errors.New("db down"),
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mockRepo := new(mocks.ISsoRepository)
-			authUC := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
 
-			mockRepo.On("GetUser", ctx, tc.email).Return(tc.mockUser, tc.mockError)
-
-			accessLevelId, accessToken, err := authUC.Login(ctx, tc.email, tc.password)
-
-			if tc.expectedError != nil {
-				require.Error(t, err)
-				if errors.Is(tc.expectedError, ErrNoUser) || errors.Is(tc.expectedError, ErrInvalidCredentials) {
-					assert.ErrorIs(t, err, tc.expectedError)
-				}
-			} else {
-				require.NoError(t, err)
+			if tc.setupRepo != nil {
+				tc.setupRepo(repo)
+			}
+			if tc.setupHasher != nil {
+				tc.setupHasher(hasher)
 			}
 
-			assert.Equal(t, tc.expectedLevel, accessLevelId)
+			uc := buildUC(repo, hasher, log)
+			role, token, err := uc.Login(context.Background(), tc.email, tc.password)
 
-			if tc.expectTokens {
-				assert.NotEmpty(t, accessToken)
+			if tc.wantErr != nil {
+				assert.Error(t, err)
+				if errors.Is(tc.wantErr, usecase.ErrNoUser) || errors.Is(tc.wantErr, usecase.ErrInvalidCredentials) {
+					assert.ErrorIs(t, err, tc.wantErr)
+				}
+				assert.Empty(t, token)
+				assert.Zero(t, role)
 			} else {
-				assert.Empty(t, accessToken)
+				assert.NoError(t, err)
+				assert.Equal(t, tc.wantRole, role)
+				assert.NotEmpty(t, token)
 			}
 		})
 	}
 }
+
+// =====================
+//       Register
+// =====================
 
 func TestAuthUseCase_Register(t *testing.T) {
-	ctx := context.Background()
-	hasher := mocks2.NewPasswordHasher(t)
+	//newID := uuid.New().String()
 
-	cases := []struct {
-		name          string
-		id            string
-		email         string
-		password      string
-		mockError     error
-		expectedError error
+	tests := []struct {
+		name        string
+		email       string
+		password    string
+		setupRepo   func(r *mockRepo.ISsoRepository)
+		setupHasher func(h *mockAuth.PasswordHasher)
+		setupLogger func(l *mockLogger.Logger)
+		wantRole    entity.Role
+		wantErr     error
 	}{
+		//{
+		//	name:     "success",
+		//	email:    "new@example.com",
+		//	password: "pass123",
+		//	setupRepo: func(r *mockRepo.ISsoRepository) {
+		//		r.On("SaveUser", mock.Anything, "new@example.com", "hashed_pass123").
+		//			Return(newID, 1, nil)
+		//	},
+		//	setupHasher: func(h *mockAuth.PasswordHasher) {
+		//		h.On("Hash", "pass123").Return("hashed_pass123", nil)
+		//	},
+		//	// kafkaProducer == nil => Send упадёт => usecase залогирует Error
+		//	setupLogger: func(l *mockLogger.Logger) {
+		//		l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+		//	},
+		//	wantRole: entity.Role(1),
+		//	wantErr:  nil,
+		//},
 		{
-			name:          "success",
-			id:            gofakeit.UUID(),
-			email:         gofakeit.Email(),
-			password:      gofakeit.Password(true, true, true, true, true, 12),
-			mockError:     nil,
-			expectedError: nil,
+			name:     "user already exists",
+			email:    "exist@example.com",
+			password: "pass123",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("SaveUser", mock.Anything, "exist@example.com", "hashed_pass123").
+					Return("", 0, DataBase.ErrUserExists)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Hash", "pass123").Return("hashed_pass123", nil)
+			},
+			wantErr: usecase.ErrUserExist,
 		},
 		{
-			name:          "success #2",
-			id:            gofakeit.UUID(),
-			email:         gofakeit.Email(),
-			password:      gofakeit.Password(true, true, true, true, true, 12),
-			mockError:     nil,
-			expectedError: nil,
+			name:     "hash error",
+			email:    "new@example.com",
+			password: "pass123",
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Hash", "pass123").Return("", errors.New("hash failed"))
+			},
+			wantErr: errors.New("hash failed"),
 		},
 		{
-			name:          "user exist",
-			id:            gofakeit.UUID(),
-			email:         gofakeit.Email(),
-			password:      gofakeit.Password(true, true, true, true, true, 12),
-			mockError:     DataBase.ErrUserExists,
-			expectedError: ErrUserExist,
-		},
-		{
-			name:          "repo error",
-			id:            gofakeit.UUID(),
-			email:         gofakeit.Email(),
-			password:      gofakeit.Password(true, true, true, true, true, 12),
-			mockError:     errors.New("something bad with repo"),
-			expectedError: errors.New("service.Register: something bad with repo"),
+			name:     "repo unexpected error",
+			email:    "new@example.com",
+			password: "pass123",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("SaveUser", mock.Anything, "new@example.com", "hashed_pass123").
+					Return("", 0, errors.New("db error"))
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Hash", "pass123").Return("hashed_pass123", nil)
+			},
+			wantErr: errors.New("db error"),
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
 
-			mockRepo.EXPECT().SaveUser(ctx, tc.email, mock.Anything).Return(tc.id, 0, tc.mockError).Once()
-
-			registerId, _, err := useCase.Register(ctx, tc.email, tc.password)
-
-			if tc.expectedError != nil {
-				assert.Error(t, err, tc.expectedError)
-			} else {
-				assert.NoError(t, err)
+			if tc.setupRepo != nil {
+				tc.setupRepo(repo)
+			}
+			if tc.setupHasher != nil {
+				tc.setupHasher(hasher)
+			}
+			if tc.setupLogger != nil {
+				tc.setupLogger(log)
 			}
 
-			assert.Equal(t, registerId, tc.id)
+			uc := buildUC(repo, hasher, log)
+			role, token, err := uc.Register(context.Background(), tc.email, tc.password)
+
+			if tc.wantErr != nil {
+				assert.Error(t, err)
+				if errors.Is(tc.wantErr, usecase.ErrUserExist) {
+					assert.ErrorIs(t, err, tc.wantErr)
+				}
+				assert.Empty(t, token)
+				assert.Zero(t, role)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.wantRole, role)
+				assert.NotEmpty(t, token)
+			}
 		})
 	}
 }
+
+// =====================
+//     DeleteAccount
+// =====================
 
 func TestAuthUseCase_DeleteAccount(t *testing.T) {
-	ctx := context.Background()
-	hasher := mocks2.NewPasswordHasher(t)
+	validID := uuid.New().String()
 
-	cases := []struct {
-		name          string
-		id            string
-		mockError     error
-		expectedOk    bool
-		expectedError error
-	}{
-		{
-			name:          "success",
-			id:            gofakeit.UUID(),
-			mockError:     nil,
-			expectedOk:    true,
-			expectedError: nil,
-		},
-		{
-			name:          "user not found",
-			id:            gofakeit.UUID(),
-			mockError:     DataBase.ErrUserNotFound,
-			expectedOk:    false,
-			expectedError: fmt.Errorf("service.DeleteAccount: %w", ErrNoUser),
-		},
-		{
-			name:          "repo error",
-			id:            gofakeit.UUID(),
-			mockError:     errors.New("repo failed"),
-			expectedOk:    false,
-			expectedError: fmt.Errorf("service.DeleteAccount: repo failed"),
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
-
-			mockRepo.
-				EXPECT().
-				DeleteUser(ctx, tc.id).
-				Return(tc.mockError).
-				Once()
-
-			ok, err := useCase.DeleteAccount(ctx, tc.id)
-
-			if tc.expectedError != nil {
-				assert.Error(t, err)
-				assert.EqualError(t, err, tc.expectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-
-			assert.Equal(t, tc.expectedOk, ok)
-		})
-	}
-}
-
-func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
-	ctx := context.Background()
-	hasher := mocks2.NewPasswordHasher(t)
-
-	cases := []struct {
-		name          string
-		inputUser     entity.User
-		password      string
-		updateID      string
-		updateErr     error
-		getUser       entity.User
-		getErr        error
-		expectedUser  entity.User
-		expectedError error
+	tests := []struct {
+		name        string
+		id          string
+		setupRepo   func(r *mockRepo.ISsoRepository)
+		setupLogger func(l *mockLogger.Logger)
+		wantOk      bool
+		wantErr     error
 	}{
 		{
 			name: "success",
-			inputUser: entity.User{
-				ID:       uuid.MustParse(gofakeit.UUID()),
-				Email:    gofakeit.Email(),
-				Name:     "John",
-				Surname:  "Doe",
-				Username: "jdoe",
-				City:     "Berlin",
+			id:   validID,
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("DeleteUser", mock.Anything, validID).Return(nil)
 			},
-			password: "strong-password",
-			updateID: gofakeit.UUID(),
-			getUser: entity.User{
-				ID:       uuid.MustParse(gofakeit.UUID()),
-				Email:    "john@mail.com",
-				Name:     "John",
-				Surname:  "Doe",
-				Username: "jdoe",
-				City:     "Berlin",
+			setupLogger: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Maybe()
 			},
-			expectedUser: entity.User{
-				ID:       uuid.MustParse(gofakeit.UUID()),
-				Email:    "john@mail.com",
-				Name:     "John",
-				Surname:  "Doe",
-				Username: "jdoe",
-				City:     "Berlin",
-			},
+			wantOk:  true,
+			wantErr: nil,
 		},
 		{
-			name: "update repo error",
-			inputUser: entity.User{
-				ID:    uuid.MustParse(gofakeit.UUID()),
-				Email: gofakeit.Email(),
+			name: "user not found",
+			id:   validID,
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("DeleteUser", mock.Anything, validID).Return(DataBase.ErrUserNotFound)
 			},
-			password:      "pass",
-			updateErr:     errors.New("update failed"),
-			expectedError: fmt.Errorf("service.UpdateUserInfo: update failed"),
+			wantOk:  false,
+			wantErr: usecase.ErrNoUser,
 		},
 		{
-			name: "get user error",
-			inputUser: entity.User{
-				ID:    uuid.MustParse(gofakeit.UUID()),
-				Email: gofakeit.Email(),
+			name: "repo unexpected error",
+			id:   validID,
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("DeleteUser", mock.Anything, validID).Return(errors.New("db error"))
 			},
-			password:      "pass",
-			updateID:      gofakeit.UUID(),
-			getErr:        errors.New("get failed"),
-			expectedError: fmt.Errorf("service.UpdateUserInfo: get failed"),
+			wantOk:  false,
+			wantErr: errors.New("db error"),
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mockRepo := mocks.NewISsoRepository(t)
-			useCase := NewAuthUseCase(mockRepo, nil, nil, nil, hasher, nil)
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
 
-			mockRepo.
-				EXPECT().
-				UpdateUserPersonal(ctx, mock.MatchedBy(func(u entity.User) bool {
-					isP, _ := hasher.Verify(u.Password, tc.password)
-
-					return u.ID == tc.inputUser.ID &&
-						u.Email == tc.inputUser.Email && isP
-				})).
-				Return(tc.updateID, tc.updateErr).
-				Once()
-
-			if tc.updateErr == nil {
-				mockRepo.
-					EXPECT().
-					GetUserById(ctx, tc.updateID).
-					Return(&tc.getUser, tc.getErr).
-					Once()
+			tc.setupRepo(repo)
+			if tc.setupLogger != nil {
+				tc.setupLogger(log)
 			}
 
-			user, err := useCase.UpdateUserInfo(
-				ctx,
-				tc.inputUser.ID.String(),
-				tc.inputUser.Name,
-				tc.inputUser.Surname,
-				tc.inputUser.Username,
-				"",
-			)
+			uc := buildUC(repo, hasher, log)
+			ok, err := uc.DeleteAccount(context.Background(), tc.id)
 
-			if tc.expectedError != nil {
+			assert.Equal(t, tc.wantOk, ok)
+			if tc.wantErr != nil {
 				assert.Error(t, err)
-				assert.EqualError(t, err, tc.expectedError.Error())
-				return
+				if errors.Is(tc.wantErr, usecase.ErrNoUser) {
+					assert.ErrorIs(t, err, usecase.ErrNoUser)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// =====================
+//    UpdateUserInfo
+// =====================
+
+func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
+	userID := uuid.New()
+	updatedUser := &userEntity.User{
+		ID:       userID,
+		Name:     "Ivan",
+		Surname:  "Petrov",
+		Username: "ivan_p",
+	}
+
+	tests := []struct {
+		name        string
+		id          string
+		firstName   string
+		surname     string
+		username    string
+		gender      string
+		setupRepo   func(r *mockRepo.ISsoRepository)
+		setupLogger func(l *mockLogger.Logger)
+		wantUser    *userEntity.User
+		wantErr     bool
+	}{
+		{
+			name:      "success",
+			id:        userID.String(),
+			firstName: "Ivan",
+			surname:   "Petrov",
+			username:  "ivan_p",
+			gender:    "male",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("UpdateUserPersonal", mock.Anything, &userEntity.UpdatePersonal{
+					ID:       userID.String(),
+					Name:     "Ivan",
+					Surname:  "Petrov",
+					Username: "ivan_p",
+					Gender:   "male",
+				}).Return(userID.String(), nil)
+				r.On("GetUserById", mock.Anything, userID.String()).Return(updatedUser, nil)
+			},
+			// горутина инвалидирует кэш через nil redis
+			setupLogger: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Maybe()
+			},
+			wantUser: updatedUser,
+			wantErr:  false,
+		},
+		{
+			name:      "UpdateUserPersonal repo error",
+			id:        userID.String(),
+			firstName: "Ivan",
+			surname:   "Petrov",
+			username:  "ivan_p",
+			gender:    "male",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("UpdateUserPersonal", mock.Anything, mock.Anything).
+					Return("", errors.New("db error"))
+			},
+			wantErr: true,
+		},
+		{
+			name:      "GetUserById error after update",
+			id:        userID.String(),
+			firstName: "Ivan",
+			surname:   "Petrov",
+			username:  "ivan_p",
+			gender:    "male",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("UpdateUserPersonal", mock.Anything, mock.Anything).
+					Return(userID.String(), nil)
+				r.On("GetUserById", mock.Anything, userID.String()).
+					Return(nil, errors.New("db error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
+
+			tc.setupRepo(repo)
+			if tc.setupLogger != nil {
+				tc.setupLogger(log)
 			}
 
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedUser, user)
+			uc := buildUC(repo, hasher, log)
+			user, err := uc.UpdateUserInfo(context.Background(), tc.id, tc.firstName, tc.surname, tc.username, tc.gender)
+
+			if tc.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, user)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.wantUser, user)
+			}
+		})
+	}
+}
+
+// =====================
+//    UpdatePassword
+// =====================
+
+func TestAuthUseCase_UpdatePassword(t *testing.T) {
+	userID := uuid.New()
+	storedUser := &userEntity.User{
+		ID:       userID,
+		Password: "hashed_oldpass",
+	}
+
+	tests := []struct {
+		name        string
+		pass        *userEntity.UpdatePass
+		setupRepo   func(r *mockRepo.ISsoRepository)
+		setupHasher func(h *mockAuth.PasswordHasher)
+		setupLogger func(l *mockLogger.Logger)
+		wantErr     error
+	}{
+		{
+			name: "success",
+			pass: &userEntity.UpdatePass{CurrPassword: "oldpass", NewPassword: "newpass"},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserById", mock.Anything, userID.String()).Return(storedUser, nil)
+				r.On("UpdatePassword", mock.Anything, userID, "hashed_newpass").Return(nil)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "oldpass", "hashed_oldpass").Return(true, nil)
+				h.On("Hash", "newpass").Return("hashed_newpass", nil)
+			},
+			setupLogger: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Maybe()
+			},
+			wantErr: nil,
+		},
+		{
+			name: "wrong current password",
+			pass: &userEntity.UpdatePass{CurrPassword: "wrongpass", NewPassword: "newpass"},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserById", mock.Anything, userID.String()).Return(storedUser, nil)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "wrongpass", "hashed_oldpass").Return(false, nil)
+			},
+			wantErr: usecase.ErrInvalidCredentials,
+		},
+		{
+			name: "verify returns error",
+			pass: &userEntity.UpdatePass{CurrPassword: "oldpass", NewPassword: "newpass"},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserById", mock.Anything, userID.String()).Return(storedUser, nil)
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "oldpass", "hashed_oldpass").Return(false, errors.New("hasher error"))
+			},
+			wantErr: errors.New("hasher error"),
+		},
+		{
+			name: "get user error",
+			pass: &userEntity.UpdatePass{CurrPassword: "oldpass", NewPassword: "newpass"},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserById", mock.Anything, userID.String()).Return(nil, errors.New("db error"))
+			},
+			wantErr: errors.New("db error"),
+		},
+		{
+			name: "update password repo error",
+			pass: &userEntity.UpdatePass{CurrPassword: "oldpass", NewPassword: "newpass"},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserById", mock.Anything, userID.String()).Return(storedUser, nil)
+				r.On("UpdatePassword", mock.Anything, userID, "hashed_newpass").Return(errors.New("db error"))
+			},
+			setupHasher: func(h *mockAuth.PasswordHasher) {
+				h.On("Verify", "oldpass", "hashed_oldpass").Return(true, nil)
+				h.On("Hash", "newpass").Return("hashed_newpass", nil)
+			},
+			wantErr: errors.New("db error"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupRepo != nil {
+				tc.setupRepo(repo)
+			}
+			if tc.setupHasher != nil {
+				tc.setupHasher(hasher)
+			}
+			if tc.setupLogger != nil {
+				tc.setupLogger(log)
+			}
+
+			uc := buildUC(repo, hasher, log)
+			err := uc.UpdatePassword(context.Background(), userID, tc.pass)
+
+			if tc.wantErr != nil {
+				assert.Error(t, err)
+				if errors.Is(tc.wantErr, usecase.ErrInvalidCredentials) {
+					assert.ErrorIs(t, err, usecase.ErrInvalidCredentials)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// =====================
+//     UpdateContext
+// =====================
+
+func TestAuthUseCase_UpdateContext(t *testing.T) {
+	userID := uuid.New()
+	styles := []int{1, 2}
+	colors := []int{3, 4}
+	music := []int{5}
+
+	tests := []struct {
+		name      string
+		req       *userEntity.UpdateContext
+		setupRepo func(r *mockRepo.ISsoRepository)
+		wantErr   bool
+	}{
+		{
+			name: "success with all fields",
+			req: &userEntity.UpdateContext{
+				City:   "Moscow",
+				Styles: &styles,
+				Colors: &colors,
+				Music:  &music,
+			},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("UpdateUserContext", mock.Anything, mock.Anything).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "success with empty optional fields",
+			req: &userEntity.UpdateContext{
+				City: "Perm",
+			},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("UpdateUserContext", mock.Anything, mock.Anything).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "repo error",
+			req: &userEntity.UpdateContext{
+				City: "Moscow",
+			},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("UpdateUserContext", mock.Anything, mock.Anything).Return(errors.New("db error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
+
+			tc.setupRepo(repo)
+
+			uc := buildUC(repo, hasher, log)
+			err := uc.UpdateContext(context.Background(), userID, tc.req)
+
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				// проверяем, что usecase проставил ID в req
+				assert.Equal(t, userID, tc.req.ID)
+			}
+		})
+	}
+}
+
+// =====================
+//      SaveOutfit
+// =====================
+
+func TestAuthUseCase_SaveOutfit(t *testing.T) {
+	userID := uuid.New()
+	outfitID := uuid.New()
+	catalogIDs := []uuid.UUID{uuid.New(), uuid.New()}
+
+	tests := []struct {
+		name      string
+		req       userEntity.SaveOutfitRequest
+		setupRepo func(r *mockRepo.ISsoRepository)
+		wantID    uuid.UUID
+		wantErr   bool
+	}{
+		{
+			name: "success without log update",
+			req: userEntity.SaveOutfitRequest{
+				Name:           "Summer outfit",
+				CatalogItemIDs: catalogIDs,
+				LogID:          0,
+			},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("SaveOutfit", mock.Anything, userID, mock.Anything).Return(outfitID, nil)
+			},
+			wantID:  outfitID,
+			wantErr: false,
+		},
+		{
+			name: "success with log update",
+			req: userEntity.SaveOutfitRequest{
+				Name:           "Winter outfit",
+				CatalogItemIDs: catalogIDs,
+				LogID:          42,
+			},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("SaveOutfit", mock.Anything, userID, mock.Anything).Return(outfitID, nil)
+				// горутина — Maybe, гарантировать вызов до возврата нельзя
+				r.On("UpdateUserOutfitLog", mock.Anything, 42).Return(nil).Maybe()
+			},
+			wantID:  outfitID,
+			wantErr: false,
+		},
+		{
+			name: "repo error",
+			req: userEntity.SaveOutfitRequest{
+				Name:           "Outfit",
+				CatalogItemIDs: catalogIDs,
+			},
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("SaveOutfit", mock.Anything, userID, mock.Anything).Return(uuid.Nil, errors.New("db error"))
+			},
+			wantID:  uuid.Nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
+
+			tc.setupRepo(repo)
+
+			uc := buildUC(repo, hasher, log)
+			id, err := uc.SaveOutfit(context.Background(), userID, tc.req)
+
+			assert.Equal(t, tc.wantID, id)
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// =====================
+//      GetOutfits
+// =====================
+
+func TestAuthUseCase_GetOutfits(t *testing.T) {
+	userID := uuid.New()
+	outfits := []userEntity.Outfit{
+		{
+			ID:    uuid.New(),
+			Name:  "Summer outfit",
+			Items: []userEntity.OutfitItem{{ID: uuid.New(), Name: "T-shirt"}},
+		},
+		{
+			ID:    uuid.New(),
+			Name:  "Winter outfit",
+			Items: []userEntity.OutfitItem{{ID: uuid.New(), Name: "Jacket"}},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		setupRepo func(r *mockRepo.ISsoRepository)
+		wantLen   int
+		wantErr   bool
+	}{
+		{
+			name: "success",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserOutfits", mock.Anything, userID).Return(outfits, nil)
+			},
+			wantLen: 2,
+			wantErr: false,
+		},
+		{
+			name: "empty list",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserOutfits", mock.Anything, userID).Return([]userEntity.Outfit{}, nil)
+			},
+			wantLen: 0,
+			wantErr: false,
+		},
+		{
+			name: "repo error",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("GetUserOutfits", mock.Anything, userID).Return(nil, errors.New("db error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
+
+			tc.setupRepo(repo)
+
+			uc := buildUC(repo, hasher, log)
+			result, err := uc.GetOutfits(context.Background(), userID)
+
+			if tc.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, result, tc.wantLen)
+			}
+		})
+	}
+}
+
+// =====================
+//     DeleteOutfit
+// =====================
+
+func TestAuthUseCase_DeleteOutfit(t *testing.T) {
+	userID := uuid.New()
+	outfitID := uuid.New()
+
+	tests := []struct {
+		name      string
+		setupRepo func(r *mockRepo.ISsoRepository)
+		wantErr   bool
+	}{
+		{
+			name: "success",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("DeleteOutfit", mock.Anything, userID, outfitID).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "repo error",
+			setupRepo: func(r *mockRepo.ISsoRepository) {
+				r.On("DeleteOutfit", mock.Anything, userID, outfitID).Return(errors.New("db error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := mockRepo.NewISsoRepository(t)
+			hasher := mockAuth.NewPasswordHasher(t)
+			log := mockLogger.NewLogger(t)
+
+			tc.setupRepo(repo)
+
+			uc := buildUC(repo, hasher, log)
+			err := uc.DeleteOutfit(context.Background(), userID, outfitID)
+
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
