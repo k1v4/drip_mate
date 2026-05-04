@@ -135,7 +135,7 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+      - ./prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -155,7 +155,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
@@ -166,10 +166,3 @@ services:
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  prometheus_data:
-  grafana_data:
-  postgres_data:
-  redis_data:
-  ml-index:
