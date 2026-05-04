@@ -1,0 +1,1001 @@
+basePath: /api/v1
+definitions:
+  entity.Catalog:
+    properties:
+      category:
+        type: string
+      category_id:
+        type: integer
+      colors:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      formality_level:
+        type: integer
+      gender:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_deleted:
+        type: boolean
+      material:
+        type: string
+      name:
+        type: string
+      season:
+        type: string
+      season_id:
+        type: integer
+      styles:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    required:
+    - category_id
+    - formality_level
+    - gender
+    - image_url
+    - material
+    - name
+    - season_id
+    type: object
+  entity.Category:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entity.ColorType:
+    properties:
+      hex:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entity.CreateCatalogRequest:
+    properties:
+      category_id:
+        type: integer
+      color_ids:
+        items:
+          type: integer
+        type: array
+      formality_level:
+        type: integer
+      gender:
+        type: string
+      image_url:
+        type: string
+      material:
+        type: string
+      name:
+        type: string
+      season_id:
+        type: integer
+      style_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - category_id
+    - formality_level
+    - gender
+    - material
+    - name
+    - season_id
+    type: object
+  entity.DeleteUserResponse:
+    properties:
+      is_successfully:
+        type: boolean
+    type: object
+  entity.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  entity.LoginResponse:
+    properties:
+      access_id:
+        $ref: '#/definitions/entity.Role'
+    type: object
+  entity.MusicType:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entity.Outfit:
+    properties:
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/internal_modules_user_service_entity.OutfitItem'
+        type: array
+      name:
+        type: string
+    type: object
+  entity.RecommendationRequest:
+    properties:
+      formality:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - formality
+    type: object
+  entity.RecommendationsCatalogRequest:
+    properties:
+      catalog:
+        items:
+          $ref: '#/definitions/entity.Catalog'
+        type: array
+      log_id:
+        type: integer
+    type: object
+  entity.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 10
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  entity.Role:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - RoleUser
+    - RoleAdmin
+  entity.SaveOutfitRequest:
+    properties:
+      catalog_item_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      log_id:
+        type: integer
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - catalog_item_ids
+    - name
+    type: object
+  entity.Season:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entity.StyleType:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entity.UpdateCatalogRequest:
+    properties:
+      category_id:
+        minimum: 1
+        type: integer
+      color_ids:
+        items:
+          type: integer
+        type: array
+      formality_level:
+        type: integer
+      gender:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      material:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      season_id:
+        minimum: 1
+        type: integer
+      style_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  entity.UpdateContext:
+    properties:
+      city:
+        type: string
+      colors:
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      music:
+        items:
+          type: integer
+        type: array
+      styles:
+        items:
+          type: integer
+        type: array
+    type: object
+  entity.UpdatePass:
+    properties:
+      curr_password:
+        type: string
+      new_password:
+        minLength: 10
+        type: string
+    required:
+    - curr_password
+    - new_password
+    type: object
+  entity.UpdatePersonal:
+    properties:
+      gender:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
+  entity.UpdateUserResponse:
+    properties:
+      user:
+        $ref: '#/definitions/entity.User'
+    type: object
+  entity.User:
+    properties:
+      access_id:
+        type: integer
+      access_level:
+        type: string
+      city:
+        type: string
+      colors:
+        items:
+          type: string
+        type: array
+      email:
+        type: string
+      id:
+        type: string
+      music:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      outfits:
+        items:
+          $ref: '#/definitions/entity.Outfit'
+        type: array
+      styles:
+        items:
+          type: string
+        type: array
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_modules_user_service_entity.OutfitItem:
+    properties:
+      id:
+        type: string
+      image:
+        type: string
+      material:
+        type: string
+      name:
+        type: string
+    type: object
+  swagger.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Outfit recommendation service
+  title: Drip Mate API
+  version: "1.0"
+paths:
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's password
+      parameters:
+      - description: Password update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdatePass'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Change password
+      tags:
+      - auth
+  /catalog:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Creates new catalog item with image upload
+      parameters:
+      - description: Create payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.CreateCatalogRequest'
+      - description: Image file
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Create catalog item
+      tags:
+      - catalog
+  /catalog/{id}:
+    delete:
+      description: Deletes item by ID
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Delete catalog item
+      tags:
+      - catalog
+    get:
+      description: Returns catalog item by ID
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Catalog'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Get catalog item
+      tags:
+      - catalog
+    put:
+      consumes:
+      - multipart/form-data
+      description: Updates catalog item with optional image upload
+      parameters:
+      - description: Item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdateCatalogRequest'
+      - description: Image file
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Catalog'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Update catalog item
+      tags:
+      - catalog
+  /catalog/all:
+    get:
+      description: Returns paginated list of catalog items
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              items:
+                items:
+                  $ref: '#/definitions/entity.Catalog'
+                type: array
+              total:
+                type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Get all catalog items
+      tags:
+      - catalog
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user by email and password, sets access_token cookie
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /me/context:
+    patch:
+      consumes:
+      - application/json
+      description: Updates additional context/preferences for the authenticated user
+      parameters:
+      - description: User context data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdateContext'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Update user context
+      tags:
+      - users
+  /me/profile:
+    patch:
+      consumes:
+      - application/json
+      description: Updates user's name, surname, username and gender
+      parameters:
+      - description: Personal info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdatePersonal'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.UpdateUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Update personal info
+      tags:
+      - users
+  /recommendation:
+    put:
+      consumes:
+      - application/json
+      description: Returns personalized catalog recommendations based on user formality
+        level
+      parameters:
+      - description: Recommendation request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.RecommendationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.RecommendationsCatalogRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Get user recommendation
+      tags:
+      - recommendation
+  /reference/categories:
+    get:
+      description: Returns list of clothing categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Category'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Get categories
+      tags:
+      - reference
+  /reference/colors:
+    get:
+      description: Returns list of available colors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.ColorType'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Get colors
+      tags:
+      - reference
+  /reference/musics:
+    get:
+      description: Returns list of available music preferences
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.MusicType'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Get music types
+      tags:
+      - reference
+  /reference/seasons:
+    get:
+      description: Returns list of seasons
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Season'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Get seasons
+      tags:
+      - reference
+  /reference/styles:
+    get:
+      description: Returns list of available styles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.StyleType'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Get styles
+      tags:
+      - reference
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and sets access_token cookie
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Register user
+      tags:
+      - auth
+  /users:
+    delete:
+      description: Permanently deletes the authenticated user's account and clears
+        cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.DeleteUserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Delete account
+      tags:
+      - users
+    get:
+      description: Returns profile of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Get current user
+      tags:
+      - users
+  /users/outfit:
+    get:
+      description: Returns all saved outfits of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Outfit'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Get outfits
+      tags:
+      - outfits
+    post:
+      consumes:
+      - application/json
+      description: Saves a new outfit for the authenticated user
+      parameters:
+      - description: Outfit data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.SaveOutfitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Save outfit
+      tags:
+      - outfits
+  /users/outfit/{id}:
+    delete:
+      description: Deletes a specific outfit by ID for the authenticated user
+      parameters:
+      - description: Outfit UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Delete outfit
+      tags:
+      - outfits
+securityDefinitions:
+  CookieAuth:
+    in: cookie
+    name: access_token
+    type: apiKey
+swagger: "2.0"

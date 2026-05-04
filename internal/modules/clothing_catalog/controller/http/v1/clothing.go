@@ -51,6 +51,19 @@ func NewCatalogRoutes(handler *echo.Group, t IClothingUseCase, l logger.Logger, 
 	adminGroup.GET("/all", r.GetAllItems)
 }
 
+// GetItem godoc
+// @Summary      Get catalog item
+// @Description  Returns catalog item by ID
+// @Tags         catalog
+// @Produce      json
+// @Param        id   path      string  true  "Item UUID"
+// @Success      200  {object}  entity.Catalog
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
+// @Failure      404  {object}  swagger.ErrorResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /catalog/{id} [get]
 func (r *containerRoutes) GetItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -71,6 +84,19 @@ func (r *containerRoutes) GetItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, item)
 }
 
+// DeleteItem godoc
+// @Summary      Delete catalog item
+// @Description  Deletes item by ID
+// @Tags         catalog
+// @Produce      json
+// @Param        id   path      string  true  "Item UUID"
+// @Success      204
+// @Failure      400  {object}  swagger.ErrorResponse
+// @Failure      401  {object}  swagger.ErrorResponse
+// @Failure      404  {object}  swagger.ErrorResponse
+// @Failure      500  {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /catalog/{id} [delete]
 func (r *containerRoutes) DeleteItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -91,6 +117,23 @@ func (r *containerRoutes) DeleteItem(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// UpdateItem godoc
+// @Summary      Update catalog item
+// @Description  Updates catalog item with optional image upload
+// @Tags         catalog
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        id     path      string  true  "Item UUID"
+// @Param        body   body      entity.UpdateCatalogRequest  true  "Update payload"
+// @Param        image  formData  file    false "Image file"
+// @Success      200    {object}  entity.Catalog
+// @Failure      400    {object}  swagger.ErrorResponse
+// @Failure      401    {object}  swagger.ErrorResponse
+// @Failure      404    {object}  swagger.ErrorResponse
+// @Failure      422    {object}  swagger.ErrorResponse
+// @Failure      500    {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /catalog/{id} [put]
 func (r *containerRoutes) UpdateItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -142,6 +185,21 @@ func (r *containerRoutes) UpdateItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, item)
 }
 
+// CreateItem godoc
+// @Summary      Create catalog item
+// @Description  Creates new catalog item with image upload
+// @Tags         catalog
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        body   body      entity.CreateCatalogRequest  true  "Create payload"
+// @Param        image  formData  file    true  "Image file"
+// @Success      201    {object}  string
+// @Failure      400    {object}  swagger.ErrorResponse
+// @Failure      401   	{object}  swagger.ErrorResponse
+// @Failure      422    {object}  swagger.ErrorResponse
+// @Failure      500    {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /catalog [post]
 func (r *containerRoutes) CreateItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -180,6 +238,18 @@ func (r *containerRoutes) CreateItem(c echo.Context) error {
 	return c.JSON(http.StatusCreated, itemUUID)
 }
 
+// GetAllItems godoc
+// @Summary      Get all catalog items
+// @Description  Returns paginated list of catalog items
+// @Tags         catalog
+// @Produce      json
+// @Param        page   query     int  false  "Page number" default(1)
+// @Param        limit  query     int  false  "Items per page" default(10)
+// @Success      200    {object}  object{items=[]entity.Catalog,total=int}
+// @Failure      401   	{object}  swagger.ErrorResponse
+// @Failure      500    {object}  swagger.ErrorResponse
+// @Security     CookieAuth
+// @Router       /catalog/all [get]
 func (r *containerRoutes) GetAllItems(c echo.Context) error {
 	ctx := c.Request().Context()
 

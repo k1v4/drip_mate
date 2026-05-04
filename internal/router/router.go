@@ -10,7 +10,9 @@ import (
 	v1user "github.com/k1v4/drip_mate/internal/modules/user_service/controller/http/v1"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
 	"github.com/k1v4/drip_mate/pkg/logger"
+	echoSwagger "github.com/swaggo/echo-swagger"
 
+	_ "github.com/k1v4/drip_mate/docs"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -32,6 +34,7 @@ func NewRouter(
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 	token := new(cfg.Token)
+	handler.GET("/api/v1/swagger/*", echoSwagger.WrapHandler)
 
 	h := handler.Group("/api/v1")
 	{
