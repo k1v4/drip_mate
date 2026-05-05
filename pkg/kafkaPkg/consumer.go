@@ -16,15 +16,15 @@ import (
 const RetryHeader = "x-retry-count"
 
 type Consumer[T any] struct {
-	reader   *kafka.Reader
-	producer *Producer[T]                    // Продюсер теперь того же типа, что и консьюмер
-	handler  func(context.Context, *T) error // Используем функцию или интерфейс
+	reader   KafkaReader
+	producer RetryProducer[T]
+	handler  func(context.Context, *T) error
 	l        logger.Logger
 }
 
 func NewConsumer[T any](
-	reader *kafka.Reader,
-	producer *Producer[T],
+	reader KafkaReader,
+	producer RetryProducer[T],
 	handler func(context.Context, *T) error,
 	l logger.Logger,
 ) *Consumer[T] {

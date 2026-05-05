@@ -106,7 +106,8 @@ func Run() {
 		return
 	}
 
-	kafkaProducerNotifications := kafkaPkg.NewProducer[entity.NotificationEvent]([]string{cfg.Kafka.Brokers}, cfg.Kafka.TopicNotification)
+	writerNotif := kafkaPkg.NewKafkaWriter([]string{cfg.Kafka.Brokers}, cfg.Kafka.TopicNotification)
+	kafkaProducerNotifications := kafkaPkg.NewProducer[entity.NotificationEvent](writerNotif)
 	if kafkaProducerNotifications == nil {
 		serviceLogger.Error(ctx, fmt.Sprintf("create kafka producer error: %v", err))
 		return
@@ -118,7 +119,8 @@ func Run() {
 		}
 	}()
 
-	kafkaProducerCatalog := kafkaPkg.NewProducer[entity.CatalogEvent]([]string{cfg.Kafka.Brokers}, cfg.Kafka.TopicCatalog)
+	writerCatalog := kafkaPkg.NewKafkaWriter([]string{cfg.Kafka.Brokers}, cfg.Kafka.TopicCatalog)
+	kafkaProducerCatalog := kafkaPkg.NewProducer[entity.CatalogEvent](writerCatalog)
 	if kafkaProducerCatalog == nil {
 		serviceLogger.Error(ctx, fmt.Sprintf("create kafka producer error: %v", err))
 		return
