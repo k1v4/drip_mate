@@ -1,439 +1,822 @@
-package v1
+package v1_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
+	"github.com/k1v4/drip_mate/internal/config"
+	internalEntity "github.com/k1v4/drip_mate/internal/entity"
+	v1 "github.com/k1v4/drip_mate/internal/modules/user_service/controller/http/v1"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/entity"
 	"github.com/k1v4/drip_mate/internal/modules/user_service/usecase"
-	mocksInternal "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
-	mocksPks "github.com/k1v4/drip_mate/mocks/pkg/logger"
+	mockSvc "github.com/k1v4/drip_mate/mocks/internal_/modules/user_service/usecase"
+	mockLogger "github.com/k1v4/drip_mate/mocks/pkg/logger"
+	"github.com/k1v4/drip_mate/pkg/DataBase"
 	"github.com/k1v4/drip_mate/pkg/jwtpkg"
-
+	appValidator "github.com/k1v4/drip_mate/pkg/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-func setupEcho() *echo.Echo {
+func defaultTokenCfg() *config.Token {
+	return &config.Token{
+		TTL:    time.Hour,
+		Secret: "test-secret",
+		Issuer: "test-issuer",
+	}
+}
+
+func newEcho() *echo.Echo {
 	e := echo.New()
-	e.HideBanner = true
+	e.Validator = appValidator.New()
 	return e
 }
 
-func TestAuthController_Login(t *testing.T) {
-	e := setupEcho()
-	mockSvc := mocksInternal.NewISsoService(t)
-	mockLogger := mocksPks.NewLogger(t)
-	NewSsoRoutes(e.Group("/api/v1"), mockSvc, mockLogger, nil)
+func setupRouter(e *echo.Echo, svc *mockSvc.ISsoService, log *mockLogger.Logger) {
+	g := e.Group("")
+	v1.NewSsoRoutes(g, svc, log, defaultTokenCfg())
+}
 
+// generateToken создаёт валидный JWT токен для тестов
+func generateToken(t *testing.T, userID uuid.UUID) string {
+	t.Helper()
+	cfg := defaultTokenCfg()
+	token, err := jwtpkg.NewAccessToken(
+		&entity.User{ID: userID, AccessID: 1},
+		cfg.TTL,
+		cfg.Secret,
+		cfg.Issuer,
+	)
+	require.NoError(t, err)
+	return token
+}
+
+// makeReq создаёт http.Request с JSON-телом и опциональной JWT-кукой
+func makeReq(method, path, body string, token *string) (*http.Request, *httptest.ResponseRecorder) {
+	var reqBody *bytes.Reader
+	if body != "" {
+		reqBody = bytes.NewReader([]byte(body))
+	} else {
+		reqBody = bytes.NewReader(nil)
+	}
+
+	req := httptest.NewRequestWithContext(context.Background(), method, path, reqBody)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	if token != nil {
+		req.AddCookie(&http.Cookie{
+			Name:  "access_token",
+			Value: *token,
+		})
+	}
+
+	return req, httptest.NewRecorder()
+}
+
+func TestContainerRoutes_Auth(t *testing.T) {
 	tests := []struct {
-		name           string
-		reqBody        string
-		mockReturn     func()
-		expectedStatus int
-		expectedBody   string
+		name       string
+		body       string
+		setupSvc   func(s *mockSvc.ISsoService)
+		setupLog   func(l *mockLogger.Logger)
+		wantStatus int
+		wantCookie bool
 	}{
 		{
-			name:    "success",
-			reqBody: `{"email":"user@mail.com","password":"password123"}`,
-			mockReturn: func() {
-				mockSvc.
-					EXPECT().
-					Login(mock.Anything, "user@mail.com", "password123").
-					Return(1, "access-token", nil).
-					Once()
+			name: "success",
+			body: `{"email":"user@example.com","password":"secret"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Login", mock.Anything, "user@example.com", "secret").
+					Return(internalEntity.Role(1), "token_abc", nil)
 			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   `{"access_token":"access-token","refresh_token":"refresh-token","access_id":1}`,
+			wantStatus: http.StatusOK,
+			wantCookie: true,
 		},
 		{
-			name:    "invalid request",
-			reqBody: `not json`,
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: code=400, message=Syntax error: offset=2, error=invalid character 'o' in literal null (expecting 'u'), internal=invalid character 'o' in literal null (expecting 'u')").Return().Once()
+			name: "empty password",
+			body: `{"email":"user@example.com","password":""}`,
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"bad request"}`,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:    "empty password",
-			reqBody: `{"email":"user@mail.com","password":""}`,
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: invalid params").Return().Once()
+			name: "empty email",
+			body: `{"email":"","password":"secret"}`,
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"bad request"}`,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:    "invalid credentials",
-			reqBody: `{"email":"user@mail.com","password":"wrong"}`,
-			mockReturn: func() {
-				mockSvc.
-					EXPECT().
-					Login(mock.Anything, "user@mail.com", "wrong").
-					Return(0, "", usecase.ErrInvalidCredentials).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: invalid credentials").Return().Once()
+			name: "invalid credentials",
+			body: `{"email":"user@example.com","password":"wrong"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Login", mock.Anything, "user@example.com", "wrong").
+					Return(internalEntity.Role(0), "", usecase.ErrInvalidCredentials)
 			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"error":"invalid credentials"}`,
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+			},
+			wantStatus: http.StatusUnauthorized,
 		},
 		{
-			name:    "no user",
-			reqBody: `{"email":"nouser@mail.com","password":"password123"}`,
-			mockReturn: func() {
-				mockSvc.
-					EXPECT().
-					Login(mock.Anything, "nouser@mail.com", "password123").
-					Return(0, "", usecase.ErrNoUser).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: user not exist").Return().Once()
+			name: "user not found",
+			body: `{"email":"ghost@example.com","password":"secret"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Login", mock.Anything, "ghost@example.com", "secret").
+					Return(internalEntity.Role(0), "", usecase.ErrNoUser)
 			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"error":"no user"}`,
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+			},
+			wantStatus: http.StatusUnauthorized,
 		},
 		{
-			name:    "internal error",
-			reqBody: `{"email":"user@mail.com","password":"password123"}`,
-			mockReturn: func() {
-				mockSvc.
-					EXPECT().
-					Login(mock.Anything, "user@mail.com", "password123").
-					Return(0, "", errors.New("something bad")).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Auth: something bad").Return().Once()
+			name: "internal error",
+			body: `{"email":"user@example.com","password":"secret"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Login", mock.Anything, "user@example.com", "secret").
+					Return(internalEntity.Role(0), "", errors.New("db down"))
 			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `{"error":"internal error"}`,
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+			},
+			wantStatus: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/login", strings.NewReader(tc.reqBody))
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			ctx := e.NewContext(req, rec)
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
 
-			tc.mockReturn()
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+			if tc.setupLog != nil {
+				tc.setupLog(log)
+			}
 
-			handler := &containerRoutes{t: mockSvc, l: mockLogger}
-			_ = handler.Auth(ctx)
+			setupRouter(e, svc, log)
 
-			assert.Equal(t, tc.expectedStatus, rec.Code)
-			if tc.expectedBody != "" {
-				assert.Contains(t, rec.Body.String(), tc.expectedBody)
+			req, rec := makeReq(http.MethodPost, "/login", tc.body, nil)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+			if tc.wantCookie {
+				assert.NotEmpty(t, rec.Header().Get("Set-Cookie"))
 			}
 		})
 	}
 }
 
-func TestAuthController_Register(t *testing.T) {
-	e := setupEcho()
-	mockSvc := mocksInternal.NewISsoService(t)
-	mockLogger := mocksPks.NewLogger(t)
-	handler := &containerRoutes{t: mockSvc, l: mockLogger}
-
+func TestContainerRoutes_Register(t *testing.T) {
 	tests := []struct {
-		name           string
-		reqBody        string
-		mockReturn     func()
-		expectedStatus int
-		expectedBody   string
+		name       string
+		body       string
+		setupSvc   func(s *mockSvc.ISsoService)
+		setupLog   func(l *mockLogger.Logger)
+		wantStatus int
+		wantCookie bool
 	}{
 		{
-			name:    "success",
-			reqBody: `{"email":"new@mail.com","password":"password12345"}`,
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					Register(mock.Anything, "new@mail.com", "password12345").
-					Return(1, "", nil).
-					Once()
+			name: "success",
+			body: `{"email":"new@example.com","password":"strongpassword"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Register", mock.Anything, "new@example.com", "strongpassword").
+					Return(internalEntity.Role(1), "token_xyz", nil)
 			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   `{"user_id":10}`,
+			wantStatus: http.StatusOK,
+			wantCookie: true,
 		},
 		{
-			name:    "invalid request",
-			reqBody: `not json`,
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: code=400, message=Syntax error: offset=2, error=invalid character 'o' in literal null (expecting 'u'), internal=invalid character 'o' in literal null (expecting 'u')").Return().Once()
-			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"bad request"}`,
+			name:       "password too short",
+			body:       `{"email":"new@example.com","password":"short"}`,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:    "short password",
-			reqBody: `{"email":"short@mail.com","password":"123"}`,
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: invalid password").Return().Once()
-			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"password must be equal or longer than 10"}`,
+			name:       "invalid email",
+			body:       `{"email":"not-an-email","password":"strongpassword"}`,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:    "empty email",
-			reqBody: `{"email":"","password":"password12345"}`,
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: invalid email").Return().Once()
+			name: "user already exists",
+			body: `{"email":"exist@example.com","password":"strongpassword"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Register", mock.Anything, "exist@example.com", "strongpassword").
+					Return(internalEntity.Role(0), "", usecase.ErrUserExist)
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"email is required"}`,
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+			},
+			wantStatus: http.StatusConflict,
 		},
 		{
-			name:    "user exist",
-			reqBody: `{"email":"exist@mail.com","password":"password12345"}`,
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return(0, "", usecase.ErrUserExist).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: user exist").Return().Once()
+			name: "internal error",
+			body: `{"email":"new@example.com","password":"strongpassword"}`,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("Register", mock.Anything, "new@example.com", "strongpassword").
+					Return(internalEntity.Role(0), "", errors.New("db down"))
 			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"error":"email or username is exist"}`,
-		},
-		{
-			name:    "usecase error",
-			reqBody: `{"email":"exist@mail.com","password":"password12345"}`,
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					Register(mock.Anything, "exist@mail.com", "password12345").
-					Return(0, "", errors.New("something bad")).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.Register: something bad").Return().Once()
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
 			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `{"error":"internal error"}`,
+			wantStatus: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/register", strings.NewReader(tc.reqBody))
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			ctx := e.NewContext(req, rec)
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
 
-			tc.mockReturn()
-			_ = handler.Register(ctx)
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+			if tc.setupLog != nil {
+				tc.setupLog(log)
+			}
 
-			assert.Equal(t, tc.expectedStatus, rec.Code)
-			if tc.expectedBody != "" {
-				assert.Contains(t, rec.Body.String(), tc.expectedBody)
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodPost, "/register", tc.body, nil)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+			if tc.wantCookie {
+				assert.NotEmpty(t, rec.Header().Get("Set-Cookie"))
 			}
 		})
 	}
 }
 
-func TestAuthController_UpdateUserInfo(t *testing.T) {
-	e := setupEcho()
-	mockSvc := mocksInternal.NewISsoService(t)
-	mockLogger := mocksPks.NewLogger(t)
-	handler := &containerRoutes{t: mockSvc, l: mockLogger}
+func TestContainerRoutes_DeleteAccount(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
 
 	tests := []struct {
-		name           string
-		reqBody        string
-		needToken      bool
-		token          string
-		mockReturn     func()
-		expectedStatus int
-		expectedBody   string
+		name       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		setupLog   func(l *mockLogger.Logger)
+		wantStatus int
 	}{
 		{
-			name:      "success",
-			reqBody:   `{"email":"upd@mail.com","password":"password12345","name":"John","surname":"Doe","username":"jdoe","city":"NY"}`,
-			needToken: true,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe", "").
-					Return(&entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com"}, nil).Once()
+			name:  "success",
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("DeleteAccount", mock.Anything, userID.String()).Return(true, nil)
 			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   `"email":"upd@mail.com"`,
+			wantStatus: http.StatusOK,
 		},
 		{
-			name:      "usecase error",
-			reqBody:   `{"email":"upd@mail.com","password":"password12345","name":"John","surname":"Doe","username":"jdoe","city":"NY"}`,
-			needToken: true,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					UpdateUserInfo(mock.Anything, 1, "John", "Doe", "jdoe", "").
-					Return(&entity.User{}, errors.New("usecase error")).Once()
-				mockLogger.EXPECT().Error(mock.Anything, fmt.Sprintf("%s: usecase error", "controller.UpdateUserInfo")).Return().Once()
-			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `"error":"internal error"`,
+			name:       "no token",
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
 		},
 		{
-			name:      "invalid password",
-			reqBody:   `{"email":"upd@mail.com","password":"short","name":"John","surname":"Doe","username":"jdoe","city":"NY"}`,
-			needToken: true,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, fmt.Sprintf("%s: invalid password", "controller.UpdateUserInfo")).Return().Once()
+			name:  "internal error",
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("DeleteAccount", mock.Anything, userID.String()).Return(false, errors.New("db error"))
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `"error":"bad request"`,
-		},
-		{
-			name:      "wrong token",
-			needToken: false,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.UpdateUserInfo: token is malformed: token contains an invalid number of segments").Return().Once()
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
 			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `"error":"wrong token"`,
-		},
-		{
-			name:      "wrong request",
-			reqBody:   `not a json`,
-			needToken: true,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.UpdateUserInfo: code=400, message=Syntax error: offset=2, error=invalid character 'o' in literal null (expecting 'u'), internal=invalid character 'o' in literal null (expecting 'u')").Return().Once()
-			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `"error":"bad request"`,
-		},
-		{
-			name:      "no token",
-			needToken: false,
-			reqBody:   `{}`,
-			token:     "",
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.UpdateUserInfo: no token").Return().Once()
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "token is required",
+			wantStatus: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodPut, "/users", strings.NewReader(tc.reqBody))
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			if tc.token != "" {
-				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tc.token)
-			}
-			ctx := e.NewContext(req, rec)
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
 
-			if tc.needToken {
-				user := entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com", AccessID: 1}
-				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute, "", "")
-				req.Header.Set("Authorization", "Bearer "+token)
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+			if tc.setupLog != nil {
+				tc.setupLog(log)
 			}
 
-			tc.mockReturn()
-			_ = handler.UpdateUserInfo(ctx)
+			setupRouter(e, svc, log)
 
-			assert.Equal(t, tc.expectedStatus, rec.Code)
-			if tc.expectedBody != "" {
-				assert.Contains(t, rec.Body.String(), tc.expectedBody)
+			req, rec := makeReq(http.MethodDelete, "/users", "", tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+		})
+	}
+}
+
+func TestContainerRoutes_GetUserByID(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+	user := &entity.User{ID: userID, Email: "user@example.com"}
+
+	tests := []struct {
+		name       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		wantStatus int
+	}{
+		{
+			name:  "success",
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("GetUserByID", mock.Anything, userID).Return(user, nil)
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no token",
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:  "internal error",
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("GetUserByID", mock.Anything, userID).Return(nil, errors.New("db error"))
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodGet, "/users", "", tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+			if tc.wantStatus == http.StatusOK {
+				var resp entity.User
+				require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+				assert.Equal(t, userID, resp.ID)
 			}
 		})
 	}
 }
 
-func TestAuthController_DeleteAccount(t *testing.T) {
-	e := setupEcho()
-	mockSvc := mocksInternal.NewISsoService(t)
-	mockLogger := mocksPks.NewLogger(t)
-	handler := &containerRoutes{t: mockSvc, l: mockLogger}
+func TestContainerRoutes_SaveOutfit(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+	outfitID := uuid.New()
+	catalogID := uuid.New()
+
+	validBody := func() string {
+		b, _ := json.Marshal(entity.SaveOutfitRequest{
+			Name:           "Test outfit",
+			CatalogItemIDs: []uuid.UUID{catalogID},
+		})
+		return string(b)
+	}
 
 	tests := []struct {
-		name           string
-		token          string
-		needToken      bool
-		mockReturn     func()
-		expectedStatus int
-		expectedBody   string
+		name       string
+		body       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		setupLog   func(l *mockLogger.Logger)
+		wantStatus int
 	}{
 		{
-			name:      "success",
-			needToken: true,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					DeleteAccount(mock.Anything, 1).
-					Return(true, nil).
-					Once()
+			name:  "success",
+			body:  validBody(),
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("SaveOutfit", mock.Anything, userID, mock.Anything).Return(outfitID, nil)
 			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   `"is_successfully":true`,
+			wantStatus: http.StatusOK,
 		},
 		{
-			name:      "usecase error",
-			needToken: true,
-			token:     "valid-token",
-			mockReturn: func() {
-				mockSvc.EXPECT().
-					DeleteAccount(mock.Anything, 1).
-					Return(false, errors.New("usecase_error")).
-					Once()
-				mockLogger.EXPECT().Error(mock.Anything, "controller.DeleteAccount: usecase_error").Return().Once()
-			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `{"error":"internal error"}`,
+			name:       "no token",
+			body:       validBody(),
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
 		},
 		{
-			name:      "invalid token",
-			needToken: false,
-			token:     "invalid-token",
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.DeleteAccount: token is malformed: token contains an invalid number of segments").Return().Once()
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   `{"error":"bad request"}`,
+			name:       "missing name",
+			body:       `{"catalog_item_ids":["` + catalogID.String() + `"]}`,
+			token:      &token,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:      "no token",
-			needToken: false,
-			token:     "",
-			mockReturn: func() {
-				mockLogger.EXPECT().Error(mock.Anything, "controller.DeleteAccount: token is required").Return().Once()
+			name:       "empty catalog_item_ids",
+			body:       `{"name":"outfit","catalog_item_ids":[]}`,
+			token:      &token,
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:  "service error",
+			body:  validBody(),
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("SaveOutfit", mock.Anything, userID, mock.Anything).Return(uuid.Nil, errors.New("db error"))
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "bad request",
+			wantStatus: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodDelete, "/users", nil)
-			if tc.token != "" {
-				req.Header.Set(echo.HeaderAuthorization, "Bearer "+tc.token)
-			}
-			ctx := e.NewContext(req, rec)
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
 
-			if tc.needToken {
-				user := entity.User{ID: uuid.MustParse(gofakeit.UUID()), Email: "upd@mail.com", AccessID: 1}
-				token, _ := jwtpkg.NewAccessToken(&user, 15*time.Minute, "", "")
-				req.Header.Set("Authorization", "Bearer "+token)
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+			if tc.setupLog != nil {
+				tc.setupLog(log)
 			}
 
-			tc.mockReturn()
-			_ = handler.DeleteAccount(ctx)
+			setupRouter(e, svc, log)
 
-			assert.Equal(t, tc.expectedStatus, rec.Code)
-			if tc.expectedBody != "" {
-				assert.Contains(t, rec.Body.String(), tc.expectedBody)
+			req, rec := makeReq(http.MethodPost, "/users/outfit", tc.body, tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+		})
+	}
+}
+
+func TestContainerRoutes_GetOutfits(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+	outfits := []entity.Outfit{
+		{ID: uuid.New(), Name: "Summer"},
+		{ID: uuid.New(), Name: "Winter"},
+	}
+
+	tests := []struct {
+		name       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		setupLog   func(l *mockLogger.Logger)
+		wantStatus int
+		wantLen    int
+	}{
+		{
+			name:  "success",
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("GetOutfits", mock.Anything, userID).Return(outfits, nil)
+			},
+			wantStatus: http.StatusOK,
+			wantLen:    2,
+		},
+		{
+			name:       "no token",
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:  "internal error",
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("GetOutfits", mock.Anything, userID).Return(nil, errors.New("db error"))
+			},
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
 			}
+			if tc.setupLog != nil {
+				tc.setupLog(log)
+			}
+
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodGet, "/users/outfit", "", tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+			if tc.wantStatus == http.StatusOK {
+				var resp []entity.Outfit
+				require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
+				assert.Len(t, resp, tc.wantLen)
+			}
+		})
+	}
+}
+
+func TestContainerRoutes_DeleteOutfit(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+	outfitID := uuid.New()
+
+	tests := []struct {
+		name       string
+		outfitID   string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		wantStatus int
+	}{
+		{
+			name:     "success",
+			outfitID: outfitID.String(),
+			token:    &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("DeleteOutfit", mock.Anything, userID, outfitID).Return(nil)
+			},
+			wantStatus: http.StatusNoContent,
+		},
+		{
+			name:       "no token",
+			outfitID:   outfitID.String(),
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "invalid outfit uuid",
+			outfitID:   "bad-uuid",
+			token:      &token,
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:     "outfit not found",
+			outfitID: outfitID.String(),
+			token:    &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("DeleteOutfit", mock.Anything, userID, outfitID).Return(DataBase.ErrOutfitNotFound)
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:     "internal error",
+			outfitID: outfitID.String(),
+			token:    &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("DeleteOutfit", mock.Anything, userID, outfitID).Return(errors.New("db error"))
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodDelete, "/users/outfit/"+tc.outfitID, "", tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+		})
+	}
+}
+
+func TestContainerRoutes_PassChange(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+
+	tests := []struct {
+		name       string
+		body       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		wantStatus int
+	}{
+		{
+			name:  "success",
+			body:  `{"curr_password":"oldpassword1","new_password":"newpassword1"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdatePassword", mock.Anything, userID, mock.Anything).Return(nil)
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no token",
+			body:       `{"curr_password":"oldpassword1","new_password":"newpassword1"}`,
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "passwords are equal",
+			body:       `{"curr_password":"samepassword1","new_password":"samepassword1"}`,
+			token:      &token,
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "new password too short",
+			body:       `{"curr_password":"oldpassword1","new_password":"short"}`,
+			token:      &token,
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name:  "invalid current password",
+			body:  `{"curr_password":"wrongpassword","new_password":"newpassword1"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdatePassword", mock.Anything, userID, mock.Anything).
+					Return(usecase.ErrInvalidCredentials)
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:  "service error",
+			body:  `{"curr_password":"oldpassword1","new_password":"newpassword1"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdatePassword", mock.Anything, userID, mock.Anything).
+					Return(errors.New("db error"))
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodPost, "/auth/change-password", tc.body, tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+		})
+	}
+}
+
+func TestContainerRoutes_UpdateUserInfo(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+	updatedUser := &entity.User{ID: userID, Name: "Ivan", Surname: "Petrov", Username: "ivan_p"}
+
+	tests := []struct {
+		name       string
+		body       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		setupLog   func(l *mockLogger.Logger)
+		wantStatus int
+	}{
+		{
+			name:  "success",
+			body:  `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdateUserInfo", mock.Anything, userID.String(), "Ivan", "Petrov", "ivan_p", "male").
+					Return(updatedUser, nil)
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no token",
+			body:       `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male"}`,
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:  "service error",
+			body:  `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdateUserInfo", mock.Anything, userID.String(), "Ivan", "Petrov", "ivan_p", "male").
+					Return(nil, errors.New("db error"))
+			},
+			setupLog: func(l *mockLogger.Logger) {
+				l.On("Error", mock.Anything, mock.AnythingOfType("string")).Maybe()
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+			if tc.setupLog != nil {
+				tc.setupLog(log)
+			}
+
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodPatch, "/me/profile", tc.body, tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
+		})
+	}
+}
+
+func TestContainerRoutes_UpdateUserContext(t *testing.T) {
+	userID := uuid.New()
+	token := generateToken(t, userID)
+
+	tests := []struct {
+		name       string
+		body       string
+		token      *string
+		setupSvc   func(s *mockSvc.ISsoService)
+		wantStatus int
+	}{
+		{
+			name:  "success with all fields",
+			body:  `{"city":"Moscow","styles":[1,2],"colors":[3],"music":[5]}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdateContext", mock.Anything, userID, mock.Anything).Return(nil)
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:  "success with only city",
+			body:  `{"city":"Perm"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdateContext", mock.Anything, userID, mock.Anything).Return(nil)
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no token",
+			body:       `{"city":"Moscow"}`,
+			token:      nil,
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:  "service error",
+			body:  `{"city":"Moscow"}`,
+			token: &token,
+			setupSvc: func(s *mockSvc.ISsoService) {
+				s.On("UpdateContext", mock.Anything, userID, mock.Anything).Return(errors.New("db error"))
+			},
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEcho()
+			svc := mockSvc.NewISsoService(t)
+			log := mockLogger.NewLogger(t)
+
+			if tc.setupSvc != nil {
+				tc.setupSvc(svc)
+			}
+
+			setupRouter(e, svc, log)
+
+			req, rec := makeReq(http.MethodPatch, "/me/context", tc.body, tc.token)
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantStatus, rec.Code)
 		})
 	}
 }
