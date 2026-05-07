@@ -60,14 +60,14 @@ func NewOpenWeatherAdapter(apiKey string) *OpenWeatherAdapter {
 }
 
 func (a *OpenWeatherAdapter) GetCurrentWeather(ctx context.Context, city string) (*entity.Weather, error) {
-	url := fmt.Sprintf(
+	urlWeather := fmt.Sprintf(
 		"%s/data/2.5/weather?q=%s&appid=%s&units=metric",
 		a.baseURL,
 		url.QueryEscape(city),
 		a.apiKey,
 	)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlWeather, nil)
 	if err != nil {
 		return nil, err
 	}
