@@ -15,11 +15,12 @@ func Test_CreateUser(t *testing.T) {
 	accessLevel := entity.Role(gofakeit.IntRange(1, 2))
 	hasher := mocks.NewPasswordHasher(t)
 
+	hasher.Mock.On("Hash", password).Return(password, nil)
 	user := CreateUser(email, password, accessLevel, hasher)
 
 	assert.NotNil(t, user)
 
 	assert.Equal(t, user.Email, email)
 	assert.NotEmpty(t, user.Password)
-	assert.Equal(t, user.AccessID, accessLevel)
+	assert.Equal(t, entity.Role(user.AccessID), accessLevel)
 }

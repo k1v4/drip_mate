@@ -10,17 +10,19 @@ import (
 )
 
 type Producer[T any] struct {
-	writer *kafka.Writer
+	writer KafkaWriter
 }
 
-func NewProducer[T any](brokers []string, topic string) *Producer[T] {
-	return &Producer[T]{
-		writer: &kafka.Writer{
-			Addr:                   kafka.TCP(brokers...),
-			Topic:                  topic,
-			Balancer:               &kafka.LeastBytes{},
-			AllowAutoTopicCreation: true,
-		},
+func NewProducer[T any](writer KafkaWriter) *Producer[T] {
+	return &Producer[T]{writer: writer}
+}
+
+func NewKafkaWriter(brokers []string, topic string) *kafka.Writer {
+	return &kafka.Writer{
+		Addr:                   kafka.TCP(brokers...),
+		Topic:                  topic,
+		Balancer:               &kafka.LeastBytes{},
+		AllowAutoTopicCreation: true,
 	}
 }
 

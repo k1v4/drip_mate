@@ -30,16 +30,16 @@ type IRecommendationRepository interface {
 type RecommendationsUseCase struct {
 	recommendationsRepo IRecommendationRepository
 	clothingUseCase     v1.IClothingUseCase
-	weatherAdapter      *adapter.OpenWeatherAdapter
-	ml                  *adapter.MLClient
+	weatherAdapter      adapter.WeatherProvider
+	ml                  adapter.MLProvider
 	l                   logger.Logger
 	cache               *redis.Client
 }
 
 func NewRecommendationsUseCase(
 	recommendationsRepo IRecommendationRepository,
-	weatherAdapter *adapter.OpenWeatherAdapter,
-	ml *adapter.MLClient,
+	weatherAdapter adapter.WeatherProvider,
+	ml adapter.MLProvider,
 	clothingUseCase v1.IClothingUseCase,
 	l logger.Logger,
 	cache *redis.Client,

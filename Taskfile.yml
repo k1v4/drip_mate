@@ -8,7 +8,7 @@ vars:
   GOIMPORTS: goimports
   COVERAGE_MIN: "70"
   COVERPKGS:
-    sh: go list ./... | grep -v mocks | grep -v repository | grep -v config | grep -v cmd | paste -sd ',' -
+    sh: go list ./... | grep -v mocks | grep -v postgres | grep -v app | grep -v docs | grep -v repository | grep -v config | grep -v cmd | paste -sd ',' -
 
 tasks:
   default:

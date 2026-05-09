@@ -146,7 +146,7 @@ func (s *AuthUseCase) DeleteAccount(ctx context.Context, id string) (bool, error
 			s.logger.Error(ctx, fmt.Sprintf("failed to delete invalidate user cache: %s", err.Error()))
 			return
 		}
-		if err = s.cache.Del(bgCtx, redispkg.GetCatalogItemKey(userUUID)).Err(); err != nil {
+		if err = s.cache.Del(bgCtx, redispkg.GetUserProfileKey(userUUID)).Err(); err != nil {
 			s.logger.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
 		}
 	}()
@@ -186,7 +186,7 @@ func (s *AuthUseCase) UpdateUserInfo(
 			s.logger.Error(ctx, fmt.Sprintf("failed to delete invalidate user cache: %s", err.Error()))
 			return
 		}
-		if err = s.cache.Del(bgCtx, redispkg.GetCatalogItemKey(userUUID)).Err(); err != nil {
+		if err = s.cache.Del(bgCtx, redispkg.GetUserProfileKey(userUUID)).Err(); err != nil {
 			s.logger.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
 		}
 	}()
@@ -223,7 +223,7 @@ func (s *AuthUseCase) UpdatePassword(ctx context.Context, id uuid.UUID, pass *us
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		if err := s.cache.Del(bgCtx, redispkg.GetCatalogItemKey(id)).Err(); err != nil {
+		if err := s.cache.Del(bgCtx, redispkg.GetUserProfileKey(id)).Err(); err != nil {
 			s.logger.Error(bgCtx, "failed to invalidate cache", zap.Error(err))
 		}
 	}()
@@ -284,7 +284,7 @@ func (s *AuthUseCase) UpdateContext(ctx context.Context, userID uuid.UUID, req *
 func (s *AuthUseCase) GetUserByID(ctx context.Context, userID uuid.UUID) (*userEntity.User, error) {
 	const op = "service.GetUserByID"
 
-	val, err := s.cache.Get(ctx, redispkg.GetCatalogItemKey(userID)).Bytes()
+	val, err := s.cache.Get(ctx, redispkg.GetUserProfileKey(userID)).Bytes()
 	if err == nil {
 		var cached userEntity.User
 		if err = json.Unmarshal(val, &cached); err == nil {
@@ -302,7 +302,7 @@ func (s *AuthUseCase) GetUserByID(ctx context.Context, userID uuid.UUID) (*userE
 		defer cancel()
 
 		if data, err := json.Marshal(user); err == nil {
-			if err = s.cache.Set(bgCtx, redispkg.GetCatalogItemKey(userID), data, time.Hour).Err(); err != nil {
+			if err = s.cache.Set(bgCtx, redispkg.GetUserProfileKey(userID), data, time.Hour).Err(); err != nil {
 				s.logger.Error(bgCtx, "failed to set cache", zap.Error(err))
 			}
 		}
