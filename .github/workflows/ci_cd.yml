@@ -31,7 +31,6 @@ jobs:
         with:
           version: v2.11.3
 
-
   test:
     name: test
     runs-on: ubuntu-latest
@@ -46,15 +45,22 @@ jobs:
       - name: Compute coverpkgs
         id: coverpkgs
         run: |
-          PKGS=$(go list ./... | grep -v mocks | grep -v postgres | grep -v app | grep -v docs | grep -v repository | grep -v config | grep -v cmd | paste -sd ',' -)
+          PKGS=$(go list ./... \
+            | grep -v mocks \
+            | grep -v postgres \
+            | grep -v app \
+            | grep -v docs \
+            | grep -v repository \
+            | grep -v config \
+            | grep -v cmd \
+            | paste -sd ',' -)
           echo "pkgs=$PKGS" >> "$GITHUB_OUTPUT"
 
       - name: Run tests with coverage
         run: |
           go test ./... \
             -coverpkg=${{ steps.coverpkgs.outputs.pkgs }} \
-            -coverprofile=coverage.out \
-            -v
+            -coverprofile=coverage.out
 
       - name: Check coverage gate (>= 70%)
         run: |
@@ -68,10 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: |
-            coverage.out
-            coverage.html
-
+          path: coverage.out
 
   build-and-push:
     name: build and push
