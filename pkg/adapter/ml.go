@@ -11,6 +11,10 @@ import (
 	"github.com/k1v4/drip_mate/internal/entity"
 )
 
+type MLProvider interface {
+	GetRecommendation(ctx context.Context, data *entity.RequestData) ([]entity.OutfitItem, error)
+}
+
 type MLClient struct {
 	baseURL    string
 	httpClient *http.Client
