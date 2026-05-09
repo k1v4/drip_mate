@@ -43,8 +43,34 @@ jobs:
         with:
           go-version: 1.24.1
 
-      - name: Run tests
-        run: go test ./... -v
+      - name: Compute coverpkgs
+        id: coverpkgs
+        run: |
+          PKGS=$(go list ./... | grep -v mocks | grep -v postgres | grep -v app | grep -v docs | grep -v repository | grep -v config | grep -v cmd | paste -sd ',' -)
+          echo "pkgs=$PKGS" >> "$GITHUB_OUTPUT"
+
+      - name: Run tests with coverage
+        run: |
+          go test ./... \
+            -coverpkg=${{ steps.coverpkgs.outputs.pkgs }} \
+            -coverprofile=coverage.out \
+            -v
+
+      - name: Check coverage gate (>= 70%)
+        run: |
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Total coverage: ${coverage}%"
+          awk "BEGIN { exit !(${coverage} >= 70) }" || \
+            (echo "Coverage ${coverage}% is below 70%" && exit 1)
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
 
 
   build-and-push:
