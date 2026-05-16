@@ -362,7 +362,47 @@ paths:
       summary: Change password
       tags:
       - auth
-  /catalog:
+  /catalogs:
+    get:
+      description: Returns paginated list of catalog items
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              items:
+                items:
+                  $ref: '#/definitions/entity.Catalog'
+                type: array
+              total:
+                type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Get all catalog items
+      tags:
+      - catalog
     post:
       consumes:
       - multipart/form-data
@@ -407,7 +447,7 @@ paths:
       summary: Create catalog item
       tags:
       - catalog
-  /catalog/{id}:
+  /catalogs/{id}:
     delete:
       description: Deletes item by ID
       parameters:
@@ -530,47 +570,6 @@ paths:
       summary: Update catalog item
       tags:
       - catalog
-  /catalog/all:
-    get:
-      description: Returns paginated list of catalog items
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            properties:
-              items:
-                items:
-                  $ref: '#/definitions/entity.Catalog'
-                type: array
-              total:
-                type: integer
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-      security:
-      - CookieAuth: []
-      summary: Get all catalog items
-      tags:
-      - catalog
   /login:
     post:
       consumes:
@@ -605,78 +604,8 @@ paths:
       summary: Login user
       tags:
       - auth
-  /me/context:
-    patch:
-      consumes:
-      - application/json
-      description: Updates additional context/preferences for the authenticated user
-      parameters:
-      - description: User context data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/entity.UpdateContext'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-      security:
-      - CookieAuth: []
-      summary: Update user context
-      tags:
-      - users
-  /me/profile:
-    patch:
-      consumes:
-      - application/json
-      description: Updates user's name, surname, username and gender
-      parameters:
-      - description: Personal info
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/entity.UpdatePersonal'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entity.UpdateUserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-      security:
-      - CookieAuth: []
-      summary: Update personal info
-      tags:
-      - users
   /recommendation:
-    put:
+    post:
       consumes:
       - application/json
       description: Returns personalized catalog recommendations based on user formality
@@ -716,7 +645,7 @@ paths:
       summary: Get user recommendation
       tags:
       - recommendation
-  /reference/categories:
+  /references/categories:
     get:
       description: Returns list of clothing categories
       produces:
@@ -735,7 +664,7 @@ paths:
       summary: Get categories
       tags:
       - reference
-  /reference/colors:
+  /references/colors:
     get:
       description: Returns list of available colors
       produces:
@@ -754,7 +683,7 @@ paths:
       summary: Get colors
       tags:
       - reference
-  /reference/musics:
+  /references/musics:
     get:
       description: Returns list of available music preferences
       produces:
@@ -773,7 +702,7 @@ paths:
       summary: Get music types
       tags:
       - reference
-  /reference/seasons:
+  /references/seasons:
     get:
       description: Returns list of seasons
       produces:
@@ -792,7 +721,7 @@ paths:
       summary: Get seasons
       tags:
       - reference
-  /reference/styles:
+  /references/styles:
     get:
       description: Returns list of available styles
       produces:
@@ -895,6 +824,40 @@ paths:
       summary: Get current user
       tags:
       - users
+  /users/context:
+    patch:
+      consumes:
+      - application/json
+      description: Updates additional context/preferences for the authenticated user
+      parameters:
+      - description: User context data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdateContext'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Update user context
+      tags:
+      - users
   /users/outfit:
     get:
       description: Returns all saved outfits of the authenticated user
@@ -992,6 +955,42 @@ paths:
       summary: Delete outfit
       tags:
       - outfits
+  /users/profile:
+    patch:
+      consumes:
+      - application/json
+      description: Updates user's name, surname, username and gender
+      parameters:
+      - description: Personal info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.UpdatePersonal'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.UpdateUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      security:
+      - CookieAuth: []
+      summary: Update personal info
+      tags:
+      - users
 securityDefinitions:
   CookieAuth:
     in: cookie

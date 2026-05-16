@@ -170,7 +170,7 @@ func TestContainerRoutes_Auth(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPost, "/login", tc.body, nil)
+			req, rec := makeReq(http.MethodPost, "/auth/login", tc.body, nil)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -251,7 +251,7 @@ func TestContainerRoutes_Register(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPost, "/register", tc.body, nil)
+			req, rec := makeReq(http.MethodPost, "/users/register", tc.body, nil)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -747,7 +747,7 @@ func TestContainerRoutes_UpdateUserInfo(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPatch, "/me/profile", tc.body, tc.token)
+			req, rec := makeReq(http.MethodPatch, "/users/profile", tc.body, tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -813,7 +813,7 @@ func TestContainerRoutes_UpdateUserContext(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPatch, "/me/context", tc.body, tc.token)
+			req, rec := makeReq(http.MethodPatch, "/users/context", tc.body, tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)

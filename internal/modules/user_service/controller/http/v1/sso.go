@@ -26,16 +26,18 @@ type containerRoutes struct {
 func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, cfg *config.Token) {
 	r := &containerRoutes{t, l, cfg}
 
-	handler.POST("/login", r.Auth)
-	handler.POST("/register", r.Register)
+	handler.POST("/auth/login", r.Auth)
+	handler.POST("/auth/change-password", r.PassChange, middlewareJWT.JWTAuth(cfg))
+
+	handler.POST("/users/register", r.Register)
+
 	handler.DELETE("/users", r.DeleteAccount, middlewareJWT.JWTAuth(cfg))
 	handler.POST("/users/outfit", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
 	handler.GET("/users/outfit", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
 	handler.GET("/users", r.GetUserByID, middlewareJWT.JWTAuth(cfg))
 	handler.DELETE("/users/outfit/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
-	handler.POST("/auth/change-password", r.PassChange, middlewareJWT.JWTAuth(cfg))
-	handler.PATCH("/me/profile", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
-	handler.PATCH("/me/context", r.UpdateUserContext, middlewareJWT.JWTAuth(cfg))
+	handler.PATCH("/users/profile", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
+	handler.PATCH("/users/context", r.UpdateUserContext, middlewareJWT.JWTAuth(cfg))
 }
 
 // Auth godoc
@@ -159,7 +161,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 // @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /me/profile [patch]
+// @Router       /users/profile [patch]
 func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 	const op = "controller.UpdateUserInfo"
 
@@ -421,7 +423,7 @@ func (r *containerRoutes) PassChange(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /me/context [patch]
+// @Router       /users/context [patch]
 func (r *containerRoutes) UpdateUserContext(c echo.Context) error {
 	const op = "controller.UpdateUserContext"
 	ctx := c.Request().Context()

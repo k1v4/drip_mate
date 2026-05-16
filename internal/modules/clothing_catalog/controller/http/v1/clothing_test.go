@@ -182,7 +182,7 @@ func TestCatalogRoutes_GetItem(t *testing.T) {
 
 			setupRouter(e, uc, log)
 
-			req, rec := makeJSONReq(http.MethodGet, "/catalog/"+tc.itemID, "", tc.token)
+			req, rec := makeJSONReq(http.MethodGet, "/catalogs/"+tc.itemID, "", tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -268,7 +268,7 @@ func TestCatalogRoutes_DeleteItem(t *testing.T) {
 
 			setupRouter(e, uc, log)
 
-			req, rec := makeJSONReq(http.MethodDelete, "/catalog/"+tc.itemID, "", tc.token)
+			req, rec := makeJSONReq(http.MethodDelete, "/catalogs/"+tc.itemID, "", tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -358,7 +358,7 @@ func TestCatalogRoutes_CreateItem(t *testing.T) {
 
 			req, rec := makeMultipartReq(
 				t,
-				http.MethodPost, "/catalog",
+				http.MethodPost, "/catalogs",
 				tc.fields,
 				"image", "image.jpg",
 				tc.fileData,
@@ -469,7 +469,7 @@ func TestCatalogRoutes_UpdateItem(t *testing.T) {
 
 			req, rec := makeMultipartReq(
 				t,
-				http.MethodPut, "/catalog/"+tc.itemID,
+				http.MethodPut, "/catalogs/"+tc.itemID,
 				tc.fields,
 				"image", "image.jpg",
 				tc.fileData,
@@ -562,7 +562,7 @@ func TestCatalogRoutes_GetAllItems(t *testing.T) {
 
 			setupRouter(e, uc, log)
 
-			req, rec := makeJSONReq(http.MethodGet, "/catalog/all"+tc.query, "", tc.token)
+			req, rec := makeJSONReq(http.MethodGet, "/catalogs"+tc.query, "", tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)

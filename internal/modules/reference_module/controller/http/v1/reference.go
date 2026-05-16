@@ -26,7 +26,7 @@ type referencesRoutes struct {
 func NewReferencesRoutes(handler *echo.Group, t IReferenceUseCase, l logger.Logger) {
 	h := &referencesRoutes{t, l}
 
-	g := handler.Group("/reference")
+	g := handler.Group("/references")
 	g.GET("/styles", h.GetStyles)
 	g.GET("/colors", h.GetColors)
 	g.GET("/musics", h.GetMusics)
@@ -41,7 +41,7 @@ func NewReferencesRoutes(handler *echo.Group, t IReferenceUseCase, l logger.Logg
 // @Produce      json
 // @Success      200  {array}   entity.StyleType
 // @Failure      500  {object}  swagger.ErrorResponse
-// @Router       /reference/styles [get]
+// @Router       /references/styles [get]
 func (h *referencesRoutes) GetStyles(c echo.Context) error {
 	styles, err := h.uc.GetStyles(c.Request().Context())
 	if err != nil {
@@ -57,7 +57,7 @@ func (h *referencesRoutes) GetStyles(c echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   entity.ColorType
 // @Failure      500  {object}  swagger.ErrorResponse
-// @Router       /reference/colors [get]
+// @Router       /references/colors [get]
 func (h *referencesRoutes) GetColors(c echo.Context) error {
 	colors, err := h.uc.GetColors(c.Request().Context())
 	if err != nil {
@@ -73,7 +73,7 @@ func (h *referencesRoutes) GetColors(c echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   entity.MusicType
 // @Failure      500  {object}  swagger.ErrorResponse
-// @Router       /reference/musics [get]
+// @Router       /references/musics [get]
 func (h *referencesRoutes) GetMusics(c echo.Context) error {
 	musics, err := h.uc.GetMusics(c.Request().Context())
 	if err != nil {
@@ -89,7 +89,7 @@ func (h *referencesRoutes) GetMusics(c echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   entity.Category
 // @Failure      500  {object}  swagger.ErrorResponse
-// @Router       /reference/categories [get]
+// @Router       /references/categories [get]
 func (h *referencesRoutes) GetCategories(c echo.Context) error {
 	categories, err := h.uc.GetCategories(c.Request().Context())
 	if err != nil {
@@ -105,7 +105,7 @@ func (h *referencesRoutes) GetCategories(c echo.Context) error {
 // @Produce      json
 // @Success      200  {array}   entity.Season
 // @Failure      500  {object}  swagger.ErrorResponse
-// @Router       /reference/seasons [get]
+// @Router       /references/seasons [get]
 func (h *referencesRoutes) GetSeasons(c echo.Context) error {
 	seasons, err := h.uc.GetSeasons(c.Request().Context())
 	if err != nil {
