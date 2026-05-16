@@ -32,12 +32,12 @@ func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, c
 	handler.POST("/users/register", r.Register)
 
 	handler.DELETE("/users", r.DeleteAccount, middlewareJWT.JWTAuth(cfg))
-	handler.POST("/users/outfits", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
-	handler.GET("/users/outfits", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
-	handler.GET("/users", r.GetUserByID, middlewareJWT.JWTAuth(cfg))
-	handler.DELETE("/users/outfits/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
-	handler.PATCH("/users/profile", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
-	handler.PATCH("/users/context", r.UpdateUserContext, middlewareJWT.JWTAuth(cfg))
+	handler.POST("/users/me/outfits", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
+	handler.GET("/users/me/outfits", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
+	handler.GET("/users/me", r.GetUserByID, middlewareJWT.JWTAuth(cfg))
+	handler.DELETE("/users/me/outfits/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
+	handler.PATCH("/users/me/profile", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
+	handler.PATCH("/users/me/context", r.UpdateUserContext, middlewareJWT.JWTAuth(cfg))
 }
 
 // Auth godoc
@@ -161,7 +161,7 @@ func (r *containerRoutes) Register(c echo.Context) error {
 // @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/profile [patch]
+// @Router       /users/me/profile [patch]
 func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 	const op = "controller.UpdateUserInfo"
 
@@ -196,7 +196,7 @@ func (r *containerRoutes) UpdateUserInfo(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users [get]
+// @Router       /users/me [get]
 func (r *containerRoutes) GetUserByID(c echo.Context) error {
 	ctx := c.Request().Context()
 	userID := c.Get(middlewareJWT.UserIDKey).(string)
@@ -262,7 +262,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 // @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/outfits [post]
+// @Router       /users/me/outfits [post]
 func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 	const op = "controller.SaveOutfit"
 
@@ -304,7 +304,7 @@ func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/outfits [get]
+// @Router       /users/me/outfits [get]
 func (r *containerRoutes) GetOutfits(c echo.Context) error {
 	const op = "controller.GetOutfits"
 	ctx := c.Request().Context()
@@ -335,7 +335,7 @@ func (r *containerRoutes) GetOutfits(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/outfits/{id} [delete]
+// @Router       /users/me/outfits/{id} [delete]
 func (r *containerRoutes) DeleteOutfit(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -423,7 +423,7 @@ func (r *containerRoutes) PassChange(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/context [patch]
+// @Router       /users/me/context [patch]
 func (r *containerRoutes) UpdateUserContext(c echo.Context) error {
 	const op = "controller.UpdateUserContext"
 	ctx := c.Request().Context()

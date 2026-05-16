@@ -647,6 +647,43 @@ const docTemplate = `{
             }
         },
         "/users": {
+            "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Permanently deletes the authenticated user's account and clears cookie",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete account",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.DeleteUserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/swagger.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
             "get": {
                 "security": [
                     {
@@ -687,44 +724,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "CookieAuth": []
-                    }
-                ],
-                "description": "Permanently deletes the authenticated user's account and clears cookie",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Delete account",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/entity.DeleteUserResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/swagger.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/swagger.ErrorResponse"
-                        }
-                    }
-                }
             }
         },
-        "/users/context": {
+        "/users/me/context": {
             "patch": {
                 "security": [
                     {
@@ -778,7 +780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/outfits": {
+        "/users/me/outfits": {
             "get": {
                 "security": [
                     {
@@ -882,7 +884,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/outfits/{id}": {
+        "/users/me/outfits/{id}": {
             "delete": {
                 "security": [
                     {
@@ -931,7 +933,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/profile": {
+        "/users/me/profile": {
             "patch": {
                 "security": [
                     {
