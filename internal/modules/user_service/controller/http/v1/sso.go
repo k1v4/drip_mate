@@ -51,7 +51,7 @@ func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, c
 // @Failure      400   {object}  swagger.ErrorResponse
 // @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
-// @Router       /login [post]
+// @Router       /auth/login [post]
 func (r *containerRoutes) Auth(c echo.Context) error {
 	const op = "controller.Auth"
 	ctx := c.Request().Context()
@@ -107,7 +107,7 @@ func (r *containerRoutes) Auth(c echo.Context) error {
 // @Failure      400   {object}  swagger.ErrorResponse
 // @Failure      409   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
-// @Router       /register [post]
+// @Router       /users/register [post]
 func (r *containerRoutes) Register(c echo.Context) error {
 	const op = "controller.Register"
 

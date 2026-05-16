@@ -362,6 +362,40 @@ paths:
       summary: Change password
       tags:
       - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user by email and password, sets access_token cookie
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
   /catalogs:
     get:
       description: Returns paginated list of catalog items
@@ -570,40 +604,6 @@ paths:
       summary: Update catalog item
       tags:
       - catalog
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticates user by email and password, sets access_token cookie
-      parameters:
-      - description: Login credentials
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/entity.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entity.LoginResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-      summary: Login user
-      tags:
-      - auth
   /recommendation:
     post:
       consumes:
@@ -740,40 +740,6 @@ paths:
       summary: Get styles
       tags:
       - reference
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Creates a new user account and sets access_token cookie
-      parameters:
-      - description: Registration data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/entity.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entity.LoginResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/swagger.ErrorResponse'
-      summary: Register user
-      tags:
-      - auth
   /users:
     delete:
       description: Permanently deletes the authenticated user's account and clears
@@ -991,6 +957,40 @@ paths:
       summary: Update personal info
       tags:
       - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and sets access_token cookie
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/entity.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/swagger.ErrorResponse'
+      summary: Register user
+      tags:
+      - auth
 securityDefinitions:
   CookieAuth:
     in: cookie
