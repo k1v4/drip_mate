@@ -368,7 +368,7 @@ func TestContainerRoutes_GetUserByID(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodGet, "/users", "", tc.token)
+			req, rec := makeReq(http.MethodGet, "/users/me", "", tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -456,7 +456,7 @@ func TestContainerRoutes_SaveOutfit(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPost, "/users/outfits", tc.body, tc.token)
+			req, rec := makeReq(http.MethodPost, "/users/me/outfits", tc.body, tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -522,7 +522,7 @@ func TestContainerRoutes_GetOutfits(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodGet, "/users/outfits", "", tc.token)
+			req, rec := makeReq(http.MethodGet, "/users/me/outfits", "", tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -600,7 +600,7 @@ func TestContainerRoutes_DeleteOutfit(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodDelete, "/users/outfits/"+tc.outfitID, "", tc.token)
+			req, rec := makeReq(http.MethodDelete, "/users/me/outfits/"+tc.outfitID, "", tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -747,7 +747,7 @@ func TestContainerRoutes_UpdateUserInfo(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPatch, "/users/profile", tc.body, tc.token)
+			req, rec := makeReq(http.MethodPatch, "/users/me/profile", tc.body, tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
@@ -813,7 +813,7 @@ func TestContainerRoutes_UpdateUserContext(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req, rec := makeReq(http.MethodPatch, "/users/context", tc.body, tc.token)
+			req, rec := makeReq(http.MethodPatch, "/users/me/context", tc.body, tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)

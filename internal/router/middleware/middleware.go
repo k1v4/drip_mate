@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/k1v4/drip_mate/internal/config"
@@ -41,7 +40,6 @@ func AdminOnly() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			level, ok := c.Get(AccessLevelKey).(entity.Role)
 
-			fmt.Println(level, ok, level != entity.RoleAdmin)
 			if !ok || level != entity.RoleAdmin {
 				return echo.NewHTTPError(http.StatusForbidden, "access denied: admin rights required")
 			}

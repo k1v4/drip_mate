@@ -764,6 +764,7 @@ paths:
       summary: Delete account
       tags:
       - users
+  /users/me:
     get:
       description: Returns profile of the authenticated user
       produces:
@@ -790,7 +791,7 @@ paths:
       summary: Get current user
       tags:
       - users
-  /users/context:
+  /users/me/context:
     patch:
       consumes:
       - application/json
@@ -824,7 +825,7 @@ paths:
       summary: Update user context
       tags:
       - users
-  /users/outfits:
+  /users/me/outfits:
     get:
       description: Returns all saved outfits of the authenticated user
       produces:
@@ -890,7 +891,7 @@ paths:
       summary: Save outfit
       tags:
       - outfits
-  /users/outfits/{id}:
+  /users/me/outfits/{id}:
     delete:
       description: Deletes a specific outfit by ID for the authenticated user
       parameters:
@@ -921,7 +922,7 @@ paths:
       summary: Delete outfit
       tags:
       - outfits
-  /users/profile:
+  /users/me/profile:
     patch:
       consumes:
       - application/json

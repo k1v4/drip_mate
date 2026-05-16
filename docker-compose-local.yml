@@ -21,7 +21,7 @@ services:
       - app-network
 
   drip-mate-frontend:
-    image: k1vch/drip-mate-frontend:1.0.3
+    image: k1vch/drip-mate-frontend:1.0.4
     container_name: drip-mate-frontend
     networks:
       - app-network
