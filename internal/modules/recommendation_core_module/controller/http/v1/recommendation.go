@@ -27,7 +27,7 @@ type recommendationsRoutes struct {
 func NewRecommendationRoutes(handler *echo.Group, t IRecommendationUseCase, l logger.Logger, cfg *config.Token) {
 	r := &recommendationsRoutes{t, l, cfg}
 
-	handler.PUT("/recommendation", r.GetRecommendation, middlewareJWT.JWTAuth(cfg))
+	handler.POST("/recommendation", r.GetRecommendation, middlewareJWT.JWTAuth(cfg))
 }
 
 // GetRecommendation godoc
@@ -43,7 +43,7 @@ func NewRecommendationRoutes(handler *echo.Group, t IRecommendationUseCase, l lo
 // @Failure      422   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /recommendation [put]
+// @Router       /recommendation [post]
 func (r *recommendationsRoutes) GetRecommendation(c echo.Context) error {
 	ctx := c.Request().Context()
 

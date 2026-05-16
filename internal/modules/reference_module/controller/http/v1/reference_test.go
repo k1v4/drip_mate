@@ -67,7 +67,7 @@ func TestReferencesRoutes_GetStyles(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/reference/styles", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/references/styles", nil)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
@@ -118,7 +118,7 @@ func TestReferencesRoutes_GetColors(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/reference/colors", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/references/colors", nil)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
@@ -168,7 +168,7 @@ func TestReferencesRoutes_GetMusics(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/reference/musics", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/references/musics", nil)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
@@ -218,7 +218,7 @@ func TestReferencesRoutes_GetCategories(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/reference/categories", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/references/categories", nil)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
@@ -268,7 +268,7 @@ func TestReferencesRoutes_GetSeasons(t *testing.T) {
 
 			setupRouter(e, svc, log)
 
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/reference/seasons", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/references/seasons", nil)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
@@ -293,11 +293,11 @@ func TestNewReferencesRoutes(t *testing.T) {
 	assert.NotEmpty(t, routes)
 
 	expected := map[string]bool{
-		"/reference/styles":     false,
-		"/reference/colors":     false,
-		"/reference/musics":     false,
-		"/reference/categories": false,
-		"/reference/seasons":    false,
+		"/references/styles":     false,
+		"/references/colors":     false,
+		"/references/musics":     false,
+		"/references/categories": false,
+		"/references/seasons":    false,
 	}
 
 	for _, route := range routes {
@@ -326,7 +326,7 @@ func TestReferencesRoutes_ContextPassed(t *testing.T) {
 	//nolint:staticcheck
 	ctx := context.WithValue(context.Background(), "test-key", "test-value")
 
-	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/reference/styles", nil)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/references/styles", nil)
 	rec := httptest.NewRecorder()
 
 	e.ServeHTTP(rec, req)

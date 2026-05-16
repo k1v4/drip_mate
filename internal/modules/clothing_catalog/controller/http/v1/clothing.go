@@ -36,8 +36,8 @@ type containerRoutes struct {
 func NewCatalogRoutes(handler *echo.Group, t IClothingUseCase, l logger.Logger, cfg *config.Token) {
 	r := &containerRoutes{t, l, cfg}
 
-	// Группа для каталога: /api/v1/catalog
-	catalogGroup := handler.Group("/catalog")
+	// Группа для каталога: /api/v1/catalogs
+	catalogGroup := handler.Group("/catalogs")
 
 	catalogGroup.GET("/:id", r.GetItem, middlewareJWT.JWTAuth(cfg))
 
@@ -48,7 +48,7 @@ func NewCatalogRoutes(handler *echo.Group, t IClothingUseCase, l logger.Logger, 
 	adminGroup.POST("", r.CreateItem)
 	adminGroup.PUT("/:id", r.UpdateItem)
 	adminGroup.DELETE("/:id", r.DeleteItem)
-	adminGroup.GET("/all", r.GetAllItems)
+	adminGroup.GET("", r.GetAllItems)
 }
 
 // GetItem godoc
@@ -63,7 +63,7 @@ func NewCatalogRoutes(handler *echo.Group, t IClothingUseCase, l logger.Logger, 
 // @Failure      404  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /catalog/{id} [get]
+// @Router       /catalogs/{id} [get]
 func (r *containerRoutes) GetItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -96,7 +96,7 @@ func (r *containerRoutes) GetItem(c echo.Context) error {
 // @Failure      404  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /catalog/{id} [delete]
+// @Router       /catalogs/{id} [delete]
 func (r *containerRoutes) DeleteItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -133,7 +133,7 @@ func (r *containerRoutes) DeleteItem(c echo.Context) error {
 // @Failure      422    {object}  swagger.ErrorResponse
 // @Failure      500    {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /catalog/{id} [put]
+// @Router       /catalogs/{id} [put]
 func (r *containerRoutes) UpdateItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -199,7 +199,7 @@ func (r *containerRoutes) UpdateItem(c echo.Context) error {
 // @Failure      422    {object}  swagger.ErrorResponse
 // @Failure      500    {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /catalog [post]
+// @Router       /catalogs [post]
 func (r *containerRoutes) CreateItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -249,7 +249,7 @@ func (r *containerRoutes) CreateItem(c echo.Context) error {
 // @Failure      401   	{object}  swagger.ErrorResponse
 // @Failure      500    {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /catalog/all [get]
+// @Router       /catalogs [get]
 func (r *containerRoutes) GetAllItems(c echo.Context) error {
 	ctx := c.Request().Context()
 

@@ -166,7 +166,7 @@ func TestRecommendationRoutes_GetRecommendation(t *testing.T) {
 
 			setupRouter(e, uc, log)
 
-			req, rec := makeReq(http.MethodPut, "/recommendation", tc.body, tc.token)
+			req, rec := makeReq(http.MethodPost, "/recommendation", tc.body, tc.token)
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantStatus, rec.Code)
