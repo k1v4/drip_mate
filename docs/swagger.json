@@ -771,7 +771,7 @@
                 }
             }
         },
-        "/users/outfit": {
+        "/users/outfits": {
             "get": {
                 "security": [
                     {
@@ -875,7 +875,7 @@
                 }
             }
         },
-        "/users/outfit/{id}": {
+        "/users/outfits/{id}": {
             "delete": {
                 "security": [
                     {

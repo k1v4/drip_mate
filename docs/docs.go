@@ -778,7 +778,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/outfit": {
+        "/users/outfits": {
             "get": {
                 "security": [
                     {
@@ -882,7 +882,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/outfit/{id}": {
+        "/users/outfits/{id}": {
             "delete": {
                 "security": [
                     {

@@ -32,10 +32,10 @@ func NewSsoRoutes(handler *echo.Group, t usecase.ISsoService, l logger.Logger, c
 	handler.POST("/users/register", r.Register)
 
 	handler.DELETE("/users", r.DeleteAccount, middlewareJWT.JWTAuth(cfg))
-	handler.POST("/users/outfit", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
-	handler.GET("/users/outfit", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
+	handler.POST("/users/outfits", r.SaveOutfit, middlewareJWT.JWTAuth(cfg))
+	handler.GET("/users/outfits", r.GetOutfits, middlewareJWT.JWTAuth(cfg))
 	handler.GET("/users", r.GetUserByID, middlewareJWT.JWTAuth(cfg))
-	handler.DELETE("/users/outfit/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
+	handler.DELETE("/users/outfits/:id", r.DeleteOutfit, middlewareJWT.JWTAuth(cfg))
 	handler.PATCH("/users/profile", r.UpdateUserInfo, middlewareJWT.JWTAuth(cfg))
 	handler.PATCH("/users/context", r.UpdateUserContext, middlewareJWT.JWTAuth(cfg))
 }
@@ -262,7 +262,7 @@ func (r *containerRoutes) DeleteAccount(c echo.Context) error {
 // @Failure      401   {object}  swagger.ErrorResponse
 // @Failure      500   {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/outfit [post]
+// @Router       /users/outfits [post]
 func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 	const op = "controller.SaveOutfit"
 
@@ -304,7 +304,7 @@ func (r *containerRoutes) SaveOutfit(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/outfit [get]
+// @Router       /users/outfits [get]
 func (r *containerRoutes) GetOutfits(c echo.Context) error {
 	const op = "controller.GetOutfits"
 	ctx := c.Request().Context()
@@ -335,7 +335,7 @@ func (r *containerRoutes) GetOutfits(c echo.Context) error {
 // @Failure      401  {object}  swagger.ErrorResponse
 // @Failure      500  {object}  swagger.ErrorResponse
 // @Security     CookieAuth
-// @Router       /users/outfit/{id} [delete]
+// @Router       /users/outfits/{id} [delete]
 func (r *containerRoutes) DeleteOutfit(c echo.Context) error {
 	ctx := c.Request().Context()
 

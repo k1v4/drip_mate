@@ -824,7 +824,7 @@ paths:
       summary: Update user context
       tags:
       - users
-  /users/outfit:
+  /users/outfits:
     get:
       description: Returns all saved outfits of the authenticated user
       produces:
@@ -890,7 +890,7 @@ paths:
       summary: Save outfit
       tags:
       - outfits
-  /users/outfit/{id}:
+  /users/outfits/{id}:
     delete:
       description: Deletes a specific outfit by ID for the authenticated user
       parameters:
