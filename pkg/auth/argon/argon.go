@@ -46,7 +46,6 @@ func (a *Hasher) Hash(password string) (string, error) {
 		return "", err
 	}
 
-	// 👇 добавляем pepper
 	input := password + a.pepper
 
 	hash := argon2.IDKey(

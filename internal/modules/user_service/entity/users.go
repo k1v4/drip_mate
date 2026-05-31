@@ -30,6 +30,7 @@ type UpdatePersonal struct {
 	Surname  string `json:"surname"`
 	Username string `json:"username"`
 	Gender   string `json:"gender"`
+	City     string `json:"city"`
 }
 
 type UpdatePass struct {
