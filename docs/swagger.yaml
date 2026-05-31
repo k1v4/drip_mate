@@ -259,6 +259,8 @@ definitions:
     type: object
   entity.UpdatePersonal:
     properties:
+      city:
+        type: string
       gender:
         type: string
       id:

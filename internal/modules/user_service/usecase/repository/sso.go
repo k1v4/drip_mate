@@ -361,6 +361,9 @@ func (a *AuthRepository) UpdateUserPersonal(ctx context.Context, newUser *entity
 		if newUser.Gender != "" {
 			builder = builder.Set("gender", newUser.Gender)
 		}
+		if newUser.City != "" {
+			builder = builder.Set("city", newUser.City)
+		}
 
 		sqlReq, args, err := builder.
 			Where(sq.Eq{"id": newUser.ID}).

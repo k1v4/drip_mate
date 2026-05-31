@@ -406,6 +406,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		Name:     "Ivan",
 		Surname:  "Petrov",
 		Username: "ivan_p",
+		City:     "Perm",
 	}
 
 	tests := []struct {
@@ -415,6 +416,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 		surname    string
 		username   string
 		gender     string
+		city       string
 		setupRepo  func(r *mockRepo.ISsoRepository)
 		needsRedis bool
 		wantUser   *userEntity.User
@@ -427,6 +429,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 			surname:   "Petrov",
 			username:  "ivan_p",
 			gender:    "male",
+			city:      "Perm",
 			setupRepo: func(r *mockRepo.ISsoRepository) {
 				r.On("UpdateUserPersonal", mock.Anything, &userEntity.UpdatePersonal{
 					ID:       userID.String(),
@@ -434,6 +437,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 					Surname:  "Petrov",
 					Username: "ivan_p",
 					Gender:   "male",
+					City:     "Perm",
 				}).Return(userID.String(), nil)
 				r.On("GetUserById", mock.Anything, userID.String()).Return(updatedUser, nil)
 			},
@@ -448,6 +452,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 			surname:   "Petrov",
 			username:  "ivan_p",
 			gender:    "male",
+			city:      "Perm",
 			setupRepo: func(r *mockRepo.ISsoRepository) {
 				r.On("UpdateUserPersonal", mock.Anything, mock.Anything).
 					Return("", errors.New("db error"))
@@ -462,6 +467,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 			surname:   "Petrov",
 			username:  "ivan_p",
 			gender:    "male",
+			city:      "Perm",
 			setupRepo: func(r *mockRepo.ISsoRepository) {
 				r.On("UpdateUserPersonal", mock.Anything, mock.Anything).
 					Return(userID.String(), nil)
@@ -502,7 +508,7 @@ func TestAuthUseCase_UpdateUserInfo(t *testing.T) {
 				redisClient,
 			)
 
-			user, err := uc.UpdateUserInfo(context.Background(), tc.id, tc.firstName, tc.surname, tc.username, tc.gender)
+			user, err := uc.UpdateUserInfo(context.Background(), tc.id, tc.firstName, tc.surname, tc.username, tc.gender, tc.city)
 
 			if tc.needsRedis {
 				time.Sleep(10 * time.Millisecond)

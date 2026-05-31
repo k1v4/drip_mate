@@ -691,7 +691,7 @@ func TestContainerRoutes_PassChange(t *testing.T) {
 func TestContainerRoutes_UpdateUserInfo(t *testing.T) {
 	userID := uuid.New()
 	token := generateToken(t, userID)
-	updatedUser := &entity.User{ID: userID, Name: "Ivan", Surname: "Petrov", Username: "ivan_p"}
+	updatedUser := &entity.User{ID: userID, Name: "Ivan", Surname: "Petrov", Username: "ivan_p", City: "Perm"}
 
 	tests := []struct {
 		name       string
@@ -703,26 +703,26 @@ func TestContainerRoutes_UpdateUserInfo(t *testing.T) {
 	}{
 		{
 			name:  "success",
-			body:  `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male"}`,
+			body:  `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male","city":"Perm"}`,
 			token: &token,
 			setupSvc: func(s *mockSvc.ISsoService) {
-				s.On("UpdateUserInfo", mock.Anything, userID.String(), "Ivan", "Petrov", "ivan_p", "male").
+				s.On("UpdateUserInfo", mock.Anything, userID.String(), "Ivan", "Petrov", "ivan_p", "male", "Perm").
 					Return(updatedUser, nil)
 			},
 			wantStatus: http.StatusOK,
 		},
 		{
 			name:       "no token",
-			body:       `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male"}`,
+			body:       `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male","city":"Perm"}`,
 			token:      nil,
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name:  "service error",
-			body:  `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male"}`,
+			body:  `{"name":"Ivan","surname":"Petrov","username":"ivan_p","gender":"male","city":"Perm"}`,
 			token: &token,
 			setupSvc: func(s *mockSvc.ISsoService) {
-				s.On("UpdateUserInfo", mock.Anything, userID.String(), "Ivan", "Petrov", "ivan_p", "male").
+				s.On("UpdateUserInfo", mock.Anything, userID.String(), "Ivan", "Petrov", "ivan_p", "male", "Perm").
 					Return(nil, errors.New("db error"))
 			},
 			setupLog: func(l *mockLogger.Logger) {

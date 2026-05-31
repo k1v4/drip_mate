@@ -1428,6 +1428,9 @@ const docTemplate = `{
         "entity.UpdatePersonal": {
             "type": "object",
             "properties": {
+                "city": {
+                    "type": "string"
+                },
                 "gender": {
                     "type": "string"
                 },
